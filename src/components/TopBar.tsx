@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, Activity, Target, Clock, Zap, User, LogOut } from "lucide-react";
+import { Menu, Activity, Target, Clock, Zap, User, LogOut, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -57,7 +57,9 @@ const TopBar = () => {
                 WinMix Prototípus
               </button>
               <a href="#match-selection" className="h-10 rounded-lg bg-card ring-1 ring-border hover:bg-muted text-sm grid place-items-center">Mérkőzések</a>
-              <a href="#call-to-action" className="h-10 rounded-lg bg-card ring-1 ring-border hover:bg-muted text-sm grid place-items-center">Elemzés</a>
+              <button onClick={() => navigate('/ai-chat')} className="h-10 rounded-lg bg-card ring-1 ring-border hover:bg-muted text-sm grid place-items-center flex items-center justify-center gap-1">
+                <Bot className="w-4 h-4" /> AI Chat
+              </button>
             </div>
           </div>
         )}
@@ -75,6 +77,13 @@ const TopBar = () => {
           >
             <Zap className="w-4 h-4" />
             WinMix Prototípus
+          </button>
+          <button 
+            onClick={() => navigate('/ai-chat')}
+            className="rounded-lg bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 font-semibold text-sm transition-colors flex items-center gap-2"
+          >
+            <Bot className="w-4 h-4" />
+            AI Chat
           </button>
         </div>
         <div className="flex items-center gap-3">

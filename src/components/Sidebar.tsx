@@ -1,4 +1,4 @@
-import { Home, Users, Calendar as CalendarIcon, Trophy, Settings, Sparkles, Clock, Brain, LayoutDashboard, ListChecks, LineChart, FlaskConical, Network, Activity, Shield, Key } from "lucide-react";
+import { Home, Users, Calendar as CalendarIcon, Trophy, Settings, Sparkles, Clock, Brain, LayoutDashboard, ListChecks, LineChart, FlaskConical, Network, Activity, Shield, Key, Bot } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { usePhaseFlags } from "@/hooks/usePhaseFlags";
 import React from "react";
@@ -39,6 +39,7 @@ const Sidebar = () => {
             <NavIconLink to="/" Icon={Home} />
             <NavIconLink to="/dashboard" Icon={LayoutDashboard} />
             <NavIconLink to="/analytics" Icon={LineChart} />
+            <NavIconLink to="/ai-chat" Icon={Bot} />
 
             {/* Phase 5: Pattern Detection */}
             {isPhase5Enabled && <NavIconLink to="/patterns" Icon={Shield} />}

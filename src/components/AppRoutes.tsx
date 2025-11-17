@@ -30,6 +30,7 @@ const ScheduledJobsPage = React.lazy(() => import('@/pages/ScheduledJobsPage'));
 const ModelsPage = React.lazy(() => import('@/pages/ModelsPage'));
 const MonitoringPage = React.lazy(() => import('@/pages/MonitoringPage'));
 const SoccerChampionship = React.lazy(() => import('@/pages/SoccerChampionship'));
+const AIChat = React.lazy(() => import('@/pages/AIChat'));
 
 // Lazy load admin components
 const AdminDashboard = React.lazy(() => import('@/pages/admin/AdminDashboard'));
@@ -89,7 +90,19 @@ const AppRoutes: React.FC = () => {
         } 
       />
       <Route path="/leagues" element={<AuthGate requireAuth={false}><Leagues /></AuthGate>} />
-      
+
+      {/* AI Chat - accessible to all */}
+      <Route
+        path="/ai-chat"
+        element={
+          <AuthGate requireAuth={false}>
+            <Suspense fallback={<PageLoading message="Loading AI Chat..." />}>
+              <AIChat />
+            </Suspense>
+          </AuthGate>
+        }
+      />
+
       {/* Protected routes - require authentication */}
       <Route path="/predictions/new" element={<AuthGate><NewPredictions /></AuthGate>} />
       <Route path="/dashboard" element={<AuthGate><Dashboard /></AuthGate>} />
