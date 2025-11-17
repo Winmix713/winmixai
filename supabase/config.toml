@@ -115,6 +115,10 @@ verify_jwt = true
 [functions.monitoring-metrics]
 verify_jwt = true
 
+# AI Chat
+[functions.ai-chat]
+verify_jwt = false
+
 # Phase 9: Collaborative Intelligence
 [functions.phase9-collaborative-intelligence]
 verify_jwt = true
