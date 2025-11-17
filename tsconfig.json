@@ -4,7 +4,25 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/analysis/*": ["./8888/analysis/*"],
+      "@/assets/hero-background.jpg": ["./8888/assets/hero-background.jpg"],
+      "@/components/alerts/*": ["./8888/components/alerts/*"],
+      "@/components/csv/*": ["./8888/components/csv/*"],
+      "@/components/league/*": ["./8888/components/league/*"],
+      "@/components/CSVUpload": ["./8888/components/CSVUpload"],
+      "@/components/LeagueDetails": ["./8888/components/LeagueDetails"],
+      "@/components/LeagueTable": ["./8888/components/LeagueTable"],
+      "@/components/NewLeagueModal": ["./8888/components/NewLeagueModal"],
+      "@/components/PatternAnalysisPage": ["./8888/components/PatternAnalysisPage"],
+      "@/contexts/*": ["./8888/contexts/*"],
+      "@/hooks/useCSVPreview": ["./8888/hooks/useCSVPreview"],
+      "@/hooks/useLeagueManagement": ["./8888/hooks/useLeagueManagement"],
+      "@/services/*": ["./8888/services/*"],
+      "@/types/csv.types": ["./8888/types/csv.types"],
+      "@/types/sportradar": ["./8888/types/sportradar"],
+      "@/utils/calculations": ["./8888/utils/calculations"],
+      "@/utils/predictionEngine": ["./8888/utils/predictionEngine"]
     },
     "noImplicitAny": false,
     "noUnusedParameters": false,
