@@ -32,3 +32,15 @@ dist-ssr
 coverage
 playwright-report
 test-results
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# ML Models
+models/*.pkl
