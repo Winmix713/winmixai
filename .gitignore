@@ -32,3 +32,10 @@ dist-ssr
 coverage
 playwright-report
 test-results
+
+# Models directory - exclude heavy binary artifacts but allow metadata
+models/*.pkl
+models/*.joblib
+models/*.h5
+models/__pycache__/
+models/*.pyc
