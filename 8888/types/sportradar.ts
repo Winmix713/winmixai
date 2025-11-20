@@ -138,3 +138,23 @@ export interface EnhancedPrediction extends PredictionResult {
   downgraded_from_confidence?: number;
   confidence_score?: number;
 }
+
+export interface SupportingMatch {
+  match_id?: number;
+  date: string;
+  teams: string;
+}
+
+export interface HighValuePattern {
+  id?: string;
+  pattern_key: string;
+  label: string;
+  frequency_pct: number;
+  accuracy_pct: number;
+  sample_size: number;
+  supporting_matches: SupportingMatch[];
+  discovered_at: string;
+  expires_at: string;
+  highlight_text?: string;
+  is_active?: boolean;
+}
