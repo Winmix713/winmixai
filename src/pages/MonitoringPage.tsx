@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   RefreshCcw, 
   AlertTriangle, 
@@ -16,7 +16,9 @@ import {
   Clock,
   TrendingUp,
   TrendingDown,
-  Info
+  Info,
+  Loader2,
+  PlayCircle
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
@@ -90,6 +92,22 @@ const useMetrics = (component?: string | null) =>
     refetchInterval: 30000,
   });
 
+const useLatestRetrainingRun = () =>
+  useQuery({
+    queryKey: ["retraining", "latest"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("model_retraining_runs")
+        .select("*")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (error && error.code !== "PGRST116") throw new Error(error.message);
+      return data;
+    },
+    refetchInterval: 30000,
+  });
+
 const ADMIN_QUICK_LINKS: AdminQuickLink[] = [
   {
     id: '1',
@@ -145,9 +163,12 @@ export default function MonitoringPage() {
   const healthQuery = useHealth();
   const graphQuery = useGraph();
   const alertsQuery = useAlerts();
+  const retrainingQuery = useLatestRetrainingRun();
 
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [selectedLinkCategory, setSelectedLinkCategory] = useState<string>("all");
+  const [showRetrainingForm, setShowRetrainingForm] = useState(false);
+  const [retrainingReason, setRetrainingReason] = useState("");
   const metricsQuery = useMetrics(selectedComponent);
 
   // Update selected component based on first health component
@@ -156,6 +177,29 @@ export default function MonitoringPage() {
       setSelectedComponent(healthQuery.data.components[0].component_name);
     }
   }, [healthQuery.data?.components, selectedComponent]);
+
+  const retrainingMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("model_retraining_requests")
+        .insert({
+          requested_by: user.id,
+          reason: retrainingReason || "Manual trigger from monitoring page",
+          priority: "high",
+          status: "pending",
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setShowRetrainingForm(false);
+      setRetrainingReason("");
+      void retrainingQuery.refetch();
+    },
+  });
 
   const metricsData: MetricsPoint[] = useMemo(() => {
     const rows: PerformanceMetricRow[] = metricsQuery.data?.metrics ?? [];
@@ -371,6 +415,153 @@ export default function MonitoringPage() {
                 <SystemHealthCard key={h.id} health={h} />
               ))}
             </div>
+
+            {/* Auto Reinforcement Status */}
+            <Card className="border-border/60 bg-muted/20 mb-8">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Model Auto Reinforcement
+                </CardTitle>
+                <Button
+                  onClick={() => setShowRetrainingForm(!showRetrainingForm)}
+                  variant="default"
+                  size="sm"
+                  disabled={retrainingMutation.isPending}
+                  className="gap-2"
+                >
+                  <PlayCircle className="w-4 h-4" />
+                  {retrainingMutation.isPending ? "Processing..." : "Retrain Now"}
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {showRetrainingForm && (
+                  <Alert>
+                    <AlertDescription className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Reason for Retraining (optional)
+                        </label>
+                        <textarea
+                          className="w-full px-3 py-2 text-sm border rounded-md bg-background"
+                          placeholder="Why are you triggering retraining?"
+                          value={retrainingReason}
+                          onChange={(e) => setRetrainingReason(e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => retrainingMutation.mutate()}
+                          disabled={retrainingMutation.isPending}
+                          size="sm"
+                        >
+                          {retrainingMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Confirm Retraining
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setShowRetrainingForm(false);
+                            setRetrainingReason("");
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      {retrainingMutation.isError && (
+                        <div className="text-sm text-destructive">
+                          Error: {retrainingMutation.error instanceof Error ? retrainingMutation.error.message : "Unknown error"}
+                        </div>
+                      )}
+                      {retrainingMutation.isSuccess && (
+                        <div className="text-sm text-green-600">
+                          ✓ Retraining request queued successfully
+                        </div>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {retrainingQuery.data ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Status</p>
+                        <Badge
+                          variant={
+                            retrainingQuery.data.status === "completed"
+                              ? "default"
+                              : retrainingQuery.data.status === "failed"
+                              ? "destructive"
+                              : retrainingQuery.data.status === "running"
+                              ? "secondary"
+                              : "outline"
+                          }
+                          className="gap-1 w-fit"
+                        >
+                          {retrainingQuery.data.status === "running" && (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          )}
+                          {retrainingQuery.data.status === "completed" && (
+                            <CheckCircle className="w-3 h-3" />
+                          )}
+                          {retrainingQuery.data.status === "failed" && (
+                            <XCircle className="w-3 h-3" />
+                          )}
+                          {retrainingQuery.data.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Source</p>
+                        <p className="text-sm font-medium">{retrainingQuery.data.source}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Dataset Size</p>
+                        <p className="text-sm font-medium">{retrainingQuery.data.dataset_size} samples</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Started</p>
+                        <p className="text-sm font-medium">
+                          {new Date(retrainingQuery.data.started_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {retrainingQuery.data.metrics && Object.keys(retrainingQuery.data.metrics).length > 0 && (
+                      <div className="border-t pt-3">
+                        <p className="text-sm font-medium mb-2">Training Metrics</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {Object.entries(retrainingQuery.data.metrics as Record<string, number>).map(
+                            ([key, value]) => (
+                              <div key={key} className="bg-card/60 p-2 rounded-md">
+                                <p className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, " ")}</p>
+                                <p className="text-sm font-semibold">
+                                  {typeof value === "number" ? value.toFixed(4) : value}
+                                </p>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {retrainingQuery.data.completed_at && (
+                      <div className="text-xs text-muted-foreground">
+                        Completed: {new Date(retrainingQuery.data.completed_at).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                ) : retrainingQuery.isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No retraining runs yet</p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Performance Metrics */}
             <Card className="border-border/60 bg-muted/20 mb-8">
