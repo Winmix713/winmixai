@@ -82,3 +82,59 @@ export interface PredictionResult {
     confidence: 'LOW' | 'MEDIUM' | 'HIGH';
   };
 }
+
+export type PredictionStatus = 'active' | 'uncertain' | 'blocked';
+export type PredictionOutcome = 'HOME' | 'DRAW' | 'AWAY' | 'home_win' | 'draw' | 'away_win';
+
+export interface ExplanationFactor {
+  factor: string;
+  weight: number;
+  contribution: string;
+  details: string;
+}
+
+export interface ConfidenceBreakdown {
+  base_confidence: number;
+  pattern_boost: number;
+  final_confidence: number;
+}
+
+export interface PredictionExplanation {
+  summary: string;
+  key_factors: ExplanationFactor[];
+  decision_tree: string[];
+  confidence_breakdown: ConfidenceBreakdown;
+}
+
+export interface DecisionNode {
+  id: number;
+  type: 'root' | 'branch' | 'leaf';
+  condition: string;
+  result?: boolean;
+  outcome?: PredictionOutcome;
+  confidence_contribution?: number;
+  next_node?: number;
+}
+
+export interface DecisionPath {
+  nodes: DecisionNode[];
+}
+
+export interface OverconfidenceCheckResult {
+  should_block: boolean;
+  reason?: string;
+  downgraded_confidence?: number;
+  alternate_outcome?: PredictionOutcome;
+  prior_failure_date?: string;
+}
+
+export interface EnhancedPrediction extends PredictionResult {
+  explanation?: PredictionExplanation;
+  decision_path?: DecisionPath;
+  prediction_status?: PredictionStatus;
+  overconfidence_flag?: boolean;
+  blocked_reason?: string;
+  alternate_outcome?: PredictionOutcome;
+  downgraded_from_confidence?: number;
+  confidence_score?: number;
+}
