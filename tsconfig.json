@@ -22,7 +22,8 @@
       "@/types/csv.types": ["./8888/types/csv.types"],
       "@/types/sportradar": ["./8888/types/sportradar"],
       "@/utils/calculations": ["./8888/utils/calculations"],
-      "@/utils/predictionEngine": ["./8888/utils/predictionEngine"]
+      "@/utils/predictionEngine": ["./8888/utils/predictionEngine"],
+      "@/utils/ensemblePredictor": ["./8888/utils/ensemblePredictor"]
     },
     "noImplicitAny": false,
     "noUnusedParameters": false,

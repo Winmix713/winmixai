@@ -39,6 +39,7 @@ export default defineConfig({
       { find: "@/types/sportradar", replacement: path.resolve(__dirname, "./8888/types/sportradar.ts") },
       { find: "@/utils/calculations", replacement: path.resolve(__dirname, "./8888/utils/calculations.ts") },
       { find: "@/utils/predictionEngine", replacement: path.resolve(__dirname, "./8888/utils/predictionEngine.ts") },
+      { find: "@/utils/ensemblePredictor", replacement: path.resolve(__dirname, "./8888/utils/ensemblePredictor.ts") },
       { find: "@", replacement: path.resolve(__dirname, "./src") },
       {
         find: "react-flow-renderer",

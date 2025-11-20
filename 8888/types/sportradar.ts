@@ -128,6 +128,33 @@ export interface OverconfidenceCheckResult {
   prior_failure_date?: string;
 }
 
+export interface EnsembleVote {
+  prediction: PredictionOutcome;
+  confidence: number;
+}
+
+export interface EnsembleBreakdown {
+  weights_used: {
+    ft: number;
+    ht: number;
+    pt: number;
+  };
+  votes: {
+    full_time?: EnsembleVote;
+    half_time?: EnsembleVote;
+    pattern?: EnsembleVote;
+  };
+  scores: {
+    HOME: number;
+    DRAW: number;
+    AWAY: number;
+  };
+  winner: PredictionOutcome;
+  final_confidence: number;
+  conflict_detected: boolean;
+  conflict_margin: number;
+}
+
 export interface EnhancedPrediction extends PredictionResult {
   explanation?: PredictionExplanation;
   decision_path?: DecisionPath;
@@ -137,4 +164,5 @@ export interface EnhancedPrediction extends PredictionResult {
   alternate_outcome?: PredictionOutcome;
   downgraded_from_confidence?: number;
   confidence_score?: number;
+  ensemble_breakdown?: EnsembleBreakdown;
 }

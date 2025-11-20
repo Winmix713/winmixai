@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Trophy, Target, TrendingUp, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
+import type { EnsembleBreakdown } from '@/types/sportradar';
 
 interface Pattern {
   template_name: string;
@@ -50,6 +51,7 @@ interface PredictionDisplayProps {
     predicted_outcome: string;
     confidence_score: number;
     btts_prediction?: boolean;
+    ensemble_breakdown?: EnsembleBreakdown;
   };
   patterns?: Pattern[];
   formScores?: { home: number; away: number } | null;
@@ -78,6 +80,34 @@ const PATTERN_ICONS: Record<string, LucideIcon> = {
   high_scoring_league: CheckCircle2
 };
 
+const ENSEMBLE_MODEL_LABELS: Record<'full_time' | 'half_time' | 'pattern', string> = {
+  full_time: 'Teljes idejű modell',
+  half_time: 'Félidős modell',
+  pattern: 'Mintázat-alapú modell'
+};
+
+const ENSEMBLE_SCORE_LABELS: Record<'HOME' | 'DRAW' | 'AWAY', string> = {
+  HOME: 'Hazai győzelem',
+  DRAW: 'Döntetlen',
+  AWAY: 'Vendég győzelem'
+};
+
+const translateOutcome = (outcome?: string) => {
+  switch (outcome) {
+    case 'home_win':
+    case 'HOME':
+      return 'Hazai győzelem';
+    case 'away_win':
+    case 'AWAY':
+      return 'Vendég győzelem';
+    case 'draw':
+    case 'DRAW':
+      return 'Döntetlen';
+    default:
+      return outcome || 'Nincs';
+  }
+};
+
 export default function PredictionDisplay({ 
   prediction, 
   patterns = [], 
@@ -92,12 +122,14 @@ export default function PredictionDisplay({
 }: PredictionDisplayProps) {
   const [expandedDecision, setExpandedDecision] = useState(false);
   const [expandedExplanation, setExpandedExplanation] = useState(false);
+  const [expandedEnsemble, setExpandedEnsemble] = useState(false);
 
-  const outcomeLabel = prediction.predicted_outcome === 'home_win' 
-    ? 'Hazai győzelem' 
-    : prediction.predicted_outcome === 'away_win' 
-      ? 'Vendég győzelem' 
-      : 'Döntetlen';
+  const ensemble = prediction.ensemble_breakdown as EnsembleBreakdown | undefined;
+  const outcomeLabel = translateOutcome(prediction.predicted_outcome);
+  const ensembleConflictReason = predictionStatus === 'uncertain' && !overconfidenceFlag && ensemble?.conflict_detected
+    ? `Ensemble konfliktus: a két legmagasabb pontszám közötti különbség ${(ensemble.conflict_margin * 100).toFixed(1)}% (küszöb: 10%).`
+    : undefined;
+  const effectiveBlockedReason = blockedReason || ensembleConflictReason;
 
   const confidenceColor = prediction.confidence_score >= 70 
     ? 'text-green-600' 
@@ -131,18 +163,7 @@ export default function PredictionDisplay({
     }
   };
 
-  const getAlternateOutcomeLabel = (outcome?: string) => {
-    switch (outcome) {
-      case 'home_win':
-        return 'Hazai győzelem';
-      case 'away_win':
-        return 'Vendég győzelem';
-      case 'draw':
-        return 'Döntetlen';
-      default:
-        return outcome || 'Nincs';
-    }
-  };
+  const getAlternateOutcomeLabel = (outcome?: string) => translateOutcome(outcome);
 
   return (
     <div className="space-y-6">
@@ -155,13 +176,13 @@ export default function PredictionDisplay({
           </Badge>
         </div>
 
-        {predictionStatus === 'uncertain' && blockedReason && (
+        {predictionStatus === 'uncertain' && effectiveBlockedReason && (
           <Alert variant="warning" className="border-yellow-500/50 bg-yellow-50/10">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
             <AlertTitle>Konfidencia Downgrade</AlertTitle>
             <AlertDescription>
               <div className="text-sm space-y-2">
-                <p>{blockedReason}</p>
+                <p>{effectiveBlockedReason}</p>
                 {downgradedFromConfidence && (
                   <div>
                     <span className="font-medium">Eredeti: {(downgradedFromConfidence * 100).toFixed(1)}%</span>
@@ -225,6 +246,113 @@ export default function PredictionDisplay({
           </div>
         </CardContent>
       </Card>
+
+      {prediction.ensemble_breakdown && (
+        <Card>
+          <CardHeader>
+            <button
+              onClick={() => setExpandedEnsemble(!expandedEnsemble)}
+              className="w-full flex items-center justify-between hover:opacity-70 transition"
+            >
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Ensemble Előrejelzés Lebontása
+              </CardTitle>
+              {expandedEnsemble ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </button>
+          </CardHeader>
+          {expandedEnsemble && (
+            <CardContent className="space-y-4">
+              {prediction.ensemble_breakdown.conflict_detected && (
+                <Alert variant="warning" className="border-yellow-500/50 bg-yellow-50/10">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <AlertTitle>Alacsony Biztonságú Predikció</AlertTitle>
+                  <AlertDescription className="text-sm">
+                    A modellek között konfliktus észlelve: a két legmagasabb pontszám közötti különbség {' '}
+                    {(prediction.ensemble_breakdown.conflict_margin * 100).toFixed(1)}% (küszöb: 10%)
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div>
+                <h4 className="font-medium text-sm mb-3">Sub-model Szavazatok:</h4>
+                <div className="space-y-2">
+                  {(['full_time', 'half_time', 'pattern'] as const).map((modelKey) => {
+                    const vote = prediction.ensemble_breakdown.votes[modelKey];
+                    if (!vote) return null;
+                    
+                    const weightKey = modelKey === 'full_time' ? 'ft' : modelKey === 'half_time' ? 'ht' : 'pt';
+                    const isOpposing = vote.prediction !== prediction.ensemble_breakdown.winner;
+                    const containerClasses = isOpposing
+                      ? 'border border-red-500/50 bg-red-50/10'
+                      : 'border border-transparent bg-muted/30';
+                    
+                    return (
+                      <div key={modelKey} className={`p-3 rounded-lg ${containerClasses}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-sm">{ENSEMBLE_MODEL_LABELS[modelKey]}</span>
+                          <Badge variant={isOpposing ? 'destructive' : 'outline'}>
+                            Súly: {(prediction.ensemble_breakdown.weights_used[weightKey] * 100).toFixed(0)}%
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs ${isOpposing ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
+                            {translateOutcome(vote.prediction)}
+                          </span>
+                          <span className="text-xs font-medium">
+                            {(vote.confidence * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        {isOpposing && (
+                          <p className="text-xs text-red-600 font-medium mt-2">
+                            Felülbírálva az ensemble által
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-sm mb-2">Végső Pontszámok:</h4>
+                <div className="space-y-2">
+                  {(['HOME', 'DRAW', 'AWAY'] as const).map((scoreKey) => (
+                    <div key={scoreKey} className="flex items-center justify-between">
+                      <span className="text-sm">{ENSEMBLE_SCORE_LABELS[scoreKey]}:</span>
+                      <div className="flex items-center gap-2 flex-1 ml-4">
+                        <Progress value={prediction.ensemble_breakdown.scores[scoreKey] * 100} className="h-2" />
+                        <span className="text-sm font-medium min-w-12 text-right">
+                          {(prediction.ensemble_breakdown.scores[scoreKey] * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Nyertes:</span>
+                  <Badge variant="default">
+                    {translateOutcome(prediction.ensemble_breakdown.winner)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm font-medium">Végső konfidencia:</span>
+                  <span className="text-sm font-bold">
+                    {(prediction.ensemble_breakdown.final_confidence * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {patterns.length > 0 && (
         <Card>
