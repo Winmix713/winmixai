@@ -34,6 +34,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import SystemHealthCard from "@/components/monitoring/SystemHealthCard";
 import PerformanceMetricsChart, { MetricsPoint } from "@/components/monitoring/PerformanceMetricsChart";
 import ComputationMapDashboard from "@/components/monitoring/ComputationMapDashboard";
+import { PredictionDecayCard } from "@/components/monitoring/PredictionDecayCard";
 import { supabase } from "@/integrations/supabase/client";
 import type { 
   AlertsResponse, 
@@ -373,6 +374,11 @@ export default function MonitoringPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Prediction Decay Alert */}
+            <div className="mb-8">
+              <PredictionDecayCard />
+            </div>
 
             {/* Critical Warnings */}
             {systemWarnings.length > 0 && (
