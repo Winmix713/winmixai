@@ -39,3 +39,18 @@ models/*.joblib
 models/*.h5
 models/__pycache__/
 models/*.pyc
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# ML Models
+models/*.pkl
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/

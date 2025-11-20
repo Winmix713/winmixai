@@ -52,6 +52,15 @@ Key data flow:
 - Modular components in `src/components/phase9` and API layer in `src/lib/phase9-api.ts`.
 - Automated tests in `src/test/phase9.test.ts` covering core behaviors.
 
+### Evaluation Logging & ID Tracking
+- **Robust Prediction Tracking**: Every prediction gets a unique UUIDv4 for end-to-end tracking from prediction to result reconciliation.
+- **CSV-based Event Sourcing**: Evaluation log stored as `/tmp/evaluation_log.csv` with atomic append operations for data integrity.
+- **Schema**: `prediction_id,timestamp,model_version,team_a,team_b,predicted_result,actual_result,confidence`
+- **Model Versioning**: Automatic git commit hash tracking or configurable model versions.
+- **Result Reconciliation**: Separate workflow for logging actual results, enabling accuracy analysis over time.
+- **Testing Suite**: Comprehensive test script (`test-evaluation-logging.ts`) validates logging, validation, and reconciliation workflows.
+- **Retention Policy**: Safe to archive/delete rows older than 90 days for performance management.
+
 ---
 
 ## 🧭 Navigation & Key Routes
@@ -195,6 +204,51 @@ Coverage summaries are printed to the console and detailed HTML/LCOV reports lan
 
 ---
 
+## 🔮 Prediction Engine
+
+The repository now ships with `prediction_engine.py`, a standalone inference harness that powers both the CLI tooling and any future server-side integrations. The engine performs strict feature validation against `model_config.yaml`, resolves the active serialized model from `models/model_registry.json`, and keeps the hydrated estimator cached via a singleton so disk I/O occurs only on the very first request. Every successful inference automatically records a row via `ml_logging.log_prediction_event`, ensuring downstream analytics (or audits) always have a traceable prediction ID.
+
+### CLI usage
+
+```bash
+python prediction_engine.py \
+  --team-a "Arsenal" \
+  --team-b "Chelsea" \
+  --features-json '{"team_form_index": 12, "opponent_form_index": 9, "avg_goals_scored": 2.1, "avg_goals_conceded": 0.8, "injury_count": 1, "rest_days": 5, "tempo_rating": 78}'
+```
+
+- Results stream to `stdout` as JSON so they can be piped into other tools.
+- Validation errors (missing/extra features) exit with code `1`; filesystem or registry issues exit with code `2`.
+- Prediction events are appended to `logs/prediction_events.csv` with the highest-probability scoreline.
+
+### Response schema
+
+The CLI and library variants both return the following JSON structure so callers can rely on a consistent contract:
+
+```json
+{
+  "prediction_id": "0fba9b43-6f06-4045-a8d4-6c94074e9885",
+  "model": {
+    "name": "baseline_scoreline_model",
+    "version": "2024.11.0",
+    "path": "models/baseline_scoreline_model.pkl"
+  },
+  "ordered_features": ["team_form_index", "opponent_form_index", "avg_goals_scored", "avg_goals_conceded", "injury_count", "rest_days", "tempo_rating"],
+  "feature_vector": [12.0, 9.0, 2.1, 0.8, 1.0, 5.0, 78.0],
+  "probabilities": {"0-0": 0.18, "1-0": 0.22, "0-1": 0.11, "2-1": 0.15, "1-2": 0.09, "2-0": 0.12, "0-2": 0.08, "Other": 0.05},
+  "predicted_result": "1-0",
+  "confidence": 0.22,
+  "context": {
+    "team_a": "Arsenal",
+    "team_b": "Chelsea"
+  }
+}
+```
+
+Supplementary Python unit tests live under `tests/test_prediction_engine.py` and assert the singleton loader semantics along with payload validation safety nets.
+
+---
+
 ## 📣 Integration Notes
 - All feature branches (Phases 3 → 9) have been merged sequentially into `integration/merge-phases-3-4-6-7-8-9` with navigation, routes, and domain types normalized to avoid duplication.
 - Shared UI elements (e.g., `Sidebar`, `App.tsx`) have consolidated imports and route registrations to surface every phase feature consistently.
@@ -209,6 +263,7 @@ Coverage summaries are printed to the console and detailed HTML/LCOV reports lan
 - **[Configuration Reference](docs/CONFIGURATION_REFERENCE.md)** - Environment variables, Supabase setup, secrets management, and feature flags
 - **[Operations Runbook](docs/OPERATIONS_RUNBOOK.md)** - Build, deploy, troubleshoot, and maintain the platform
 - **[Authentication Guide](docs/AUTHENTICATION.md)** - User authentication, authorization, OAuth setup, and security best practices
+- **[Evaluation Logging Guide](docs/EVALUATION_LOGGING.md)** - Robust prediction tracking, result reconciliation, and accuracy analysis system
 
 ### Quick Commands
 ```bash
@@ -229,6 +284,11 @@ supabase functions deploy <name>        # Deploy function
 supabase functions logs <name>          # View function logs
 supabase secrets set KEY=value          # Add secret
 
+# Evaluation Logging
+deno run test-evaluation-logging.ts     # Test evaluation logging system
+cat /tmp/evaluation_log.csv            # View evaluation log
+supabase functions invoke reconcile-prediction-result --data '{"prediction_id":"uuid","actual_result":"home_win"}'  # Reconcile prediction result
+
 # Security
 npm audit                               # Check for vulnerabilities
 npm audit fix                           # Fix auto-fixable issues
@@ -241,6 +301,93 @@ npm audit fix                           # Fix auto-fixable issues
 - ✅ **Authentication:** Fully functional with RBAC (admin, analyst, user)
 - ⚠️ **Security:** 2 moderate npm vulnerabilities (dev-only, fix available)
 - ✅ **Production Ready:** After addressing critical items in audit report
+
+---
+
+## 🤖 Model Training Pipeline
+
+The platform includes a robust CLI tool for training and managing machine learning models with full reproducibility and versioning support.
+
+### Quick Start
+
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Train a model with default settings
+python train_model.py
+
+# Train with custom data
+python train_model.py --data-path data/custom_dataset.csv
+
+# Dry run (train but don't save)
+python train_model.py --dry-run
+
+# Use custom random seed
+python train_model.py --random-seed 123
+```
+
+### Training Workflow
+
+1. **Prerequisites**: Python 3.9+ is required
+
+2. **Install Dependencies**: Install required Python packages with pinned versions
+   ```bash
+   # It's recommended to use a virtual environment
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. **Prepare Data**: Ensure your training dataset CSV contains all features defined in `model_config.yaml`
+   - Default location: `data/training_dataset.csv`
+   - Must include all `input_features` and the `target_column`
+
+4. **Configure Model**: Edit `model_config.yaml` to specify:
+   - `model_type`: `LogisticRegression` or `DecisionTree`
+   - `input_features`: List of feature column names
+   - `target_column`: Target variable name
+   - `hyperparameters`: Model-specific parameters
+
+5. **Run Training**: Execute the training script
+   ```bash
+   python train_model.py
+   ```
+
+6. **Check Results**: 
+   - Trained model saved to `models/<algorithm>_<YYYYMMDD_HHMMSS>.pkl`
+   - Registry updated in `models/model_registry.json`
+   - Evaluation metrics printed to console
+
+### Features
+
+- **Reproducibility**: Fixed random seed (default: 42) ensures identical results across runs
+- **Versioning**: Timestamped model files prevent accidental overwrites
+- **Comprehensive Metrics**: Accuracy, Precision, Recall, and F1-Score for all models
+- **Registry Management**: JSON registry tracks all trained models with metadata
+- **Error Handling**: Clear validation messages for missing features or malformed data
+- **Dry Run Mode**: Test training without saving artifacts
+
+### Model Registry
+
+Each trained model is registered with:
+- `id`: Unique UUID for the training run
+- `timestamp`: ISO 8601 timestamp
+- `metrics`: Performance scores (accuracy, precision, recall, f1_score)
+- `parameters`: Hyperparameters used for training
+- `model_path`: Relative path to the serialized model file
+- `status`: Model status (`candidate` by default, can be promoted to `active`)
+- `random_seed`: Seed used for reproducibility
+- `features`: List of input features
+- `target`: Target column name
+
+### Troubleshooting
+
+**Missing columns error**: Ensure your CSV contains all features listed in `model_config.yaml`
+
+**Import errors**: Verify all dependencies are installed: `pip install -r requirements.txt`
+
+**Registry corruption**: The script handles corrupted registries automatically by creating a new one
 
 ---
 

@@ -8,6 +8,11 @@ import {
   logAuditAction,
   handleCorsPreflight 
 } from "../_shared/auth.ts";
+import { 
+  generatePredictionId, 
+  logPredictionEvent, 
+  getModelVersion 
+} from "../_shared/evaluation-logging.ts";
 
 interface MatchResult {
   id: string;
@@ -119,6 +124,13 @@ serve(async (req) => {
 
     const { matchId } = validation.data
 
+    // Generate unique prediction ID for tracking
+    const predictionId = generatePredictionId();
+    console.log(`🆔 Generated prediction ID: ${predictionId} for match: ${matchId}`);
+
+    // Get current model version
+    const modelVersion = await getModelVersion();
+
     // 1. Fetch match details
     const { data: match, error: matchError } = await supabase
       .from('matches')
@@ -229,10 +241,12 @@ serve(async (req) => {
     const { data: prediction, error: predError } = await supabase
       .from('predictions')
       .insert({
+        prediction_id: predictionId, // Add tracking ID
         match_id: matchId,
         predicted_outcome: predictedOutcome,
         confidence_score: confidence,
         css_score: confidence, // CSS Score for calibration
+        model_version: modelVersion, // Track model version for performance analysis
         prediction_factors: {
           patterns: detectedPatterns.map(p => p.template_name),
           pattern_count: detectedPatterns.length,
@@ -274,7 +288,23 @@ serve(async (req) => {
       );
     }
 
-    // 8. Save detected patterns
+    // 8. Log prediction event to evaluation log
+    try {
+      await logPredictionEvent(
+        predictionId,
+        match.home_team.name,
+        match.away_team.name,
+        confidence / 100, // Convert to 0-1 range
+        predictedOutcome,
+        null, // actual_result is null at prediction time
+        modelVersion
+      );
+    } catch (logError) {
+      console.error('Error logging prediction event:', logError);
+      // Don't fail the request, just log the error
+    }
+
+    // 9. Save detected patterns
     for (const pattern of detectedPatterns) {
       const { data: template } = await supabase
         .from('pattern_templates')
@@ -311,9 +341,13 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        prediction, 
+        prediction: {
+          ...prediction,
+          prediction_id: predictionId // Include tracking ID in response
+        }, 
         patterns: detectedPatterns,
-        form_scores: { home: homeFormScore, away: awayFormScore }
+        form_scores: { home: homeFormScore, away: awayFormScore },
+        prediction_id: predictionId // Also include at top level for easy access
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
