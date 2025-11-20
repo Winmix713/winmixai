@@ -1,0 +1,11 @@
+{
+  "models": [
+    {
+      "name": "baseline_scoreline_model",
+      "version": "2024.11.0",
+      "path": "models/baseline_scoreline_model.pkl",
+      "status": "active",
+      "description": "Lightweight baseline model for CLI-powered inference demos"
+    }
+  ]
+}

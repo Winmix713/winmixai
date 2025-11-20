@@ -1,0 +1,21 @@
+{
+  "input_features": [
+    "team_form_index",
+    "opponent_form_index",
+    "avg_goals_scored",
+    "avg_goals_conceded",
+    "injury_count",
+    "rest_days",
+    "tempo_rating"
+  ],
+  "scoreline_classes": [
+    "0-0",
+    "1-0",
+    "0-1",
+    "2-1",
+    "1-2",
+    "2-0",
+    "0-2",
+    "Other"
+  ]
+}
