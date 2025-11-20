@@ -1,12 +1,48 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Target, TrendingUp, CheckCircle2, type LucideIcon } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Trophy, Target, TrendingUp, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, type LucideIcon } from 'lucide-react';
+import { useState } from 'react';
 
 interface Pattern {
   template_name: string;
   confidence_boost: number;
   data: Record<string, unknown>;
+}
+
+interface ExplanationFactor {
+  factor: string;
+  weight: number;
+  contribution: string;
+  details: string;
+}
+
+interface ConfidenceBreakdown {
+  base_confidence: number;
+  pattern_boost: number;
+  final_confidence: number;
+}
+
+interface Explanation {
+  summary: string;
+  key_factors: ExplanationFactor[];
+  decision_tree: string[];
+  confidence_breakdown: ConfidenceBreakdown;
+}
+
+interface DecisionNode {
+  id: number;
+  type: 'root' | 'branch' | 'leaf';
+  condition: string;
+  result?: boolean;
+  outcome?: string;
+  confidence_contribution?: number;
+  next_node?: number;
+}
+
+interface DecisionPath {
+  nodes: DecisionNode[];
 }
 
 interface PredictionDisplayProps {
@@ -17,6 +53,13 @@ interface PredictionDisplayProps {
   };
   patterns?: Pattern[];
   formScores?: { home: number; away: number } | null;
+  explanation?: Explanation;
+  decisionPath?: DecisionPath;
+  predictionStatus?: 'active' | 'uncertain' | 'blocked';
+  overconfidenceFlag?: boolean;
+  blockedReason?: string;
+  alternateOutcome?: string;
+  downgradedFromConfidence?: number;
 }
 
 const PATTERN_LABELS: Record<string, string> = {
@@ -35,7 +78,21 @@ const PATTERN_ICONS: Record<string, LucideIcon> = {
   high_scoring_league: CheckCircle2
 };
 
-export default function PredictionDisplay({ prediction, patterns = [], formScores }: PredictionDisplayProps) {
+export default function PredictionDisplay({ 
+  prediction, 
+  patterns = [], 
+  formScores,
+  explanation,
+  decisionPath,
+  predictionStatus = 'active',
+  overconfidenceFlag = false,
+  blockedReason,
+  alternateOutcome,
+  downgradedFromConfidence
+}: PredictionDisplayProps) {
+  const [expandedDecision, setExpandedDecision] = useState(false);
+  const [expandedExplanation, setExpandedExplanation] = useState(false);
+
   const outcomeLabel = prediction.predicted_outcome === 'home_win' 
     ? 'Hazai győzelem' 
     : prediction.predicted_outcome === 'away_win' 
@@ -48,8 +105,89 @@ export default function PredictionDisplay({ prediction, patterns = [], formScore
       ? 'text-yellow-600' 
       : 'text-red-600';
 
+  const getStatusBadgeVariant = () => {
+    switch (predictionStatus) {
+      case 'active':
+        return 'default';
+      case 'uncertain':
+        return 'secondary';
+      case 'blocked':
+        return 'destructive';
+      default:
+        return 'default';
+    }
+  };
+
+  const getStatusLabel = () => {
+    switch (predictionStatus) {
+      case 'active':
+        return 'Megerősített előrejelzés';
+      case 'uncertain':
+        return 'Downgrade - Előzetes hiba miatt';
+      case 'blocked':
+        return 'Letiltott - Lásd az okot';
+      default:
+        return 'Aktív';
+    }
+  };
+
+  const getAlternateOutcomeLabel = (outcome?: string) => {
+    switch (outcome) {
+      case 'home_win':
+        return 'Hazai győzelem';
+      case 'away_win':
+        return 'Vendég győzelem';
+      case 'draw':
+        return 'Döntetlen';
+      default:
+        return outcome || 'Nincs';
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Status and Alerts */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Előrejelzés státusza:</span>
+          <Badge variant={getStatusBadgeVariant()}>
+            {getStatusLabel()}
+          </Badge>
+        </div>
+
+        {predictionStatus === 'uncertain' && blockedReason && (
+          <Alert variant="warning" className="border-yellow-500/50 bg-yellow-50/10">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertTitle>Konfidencia Downgrade</AlertTitle>
+            <AlertDescription>
+              <div className="text-sm space-y-2">
+                <p>{blockedReason}</p>
+                {downgradedFromConfidence && (
+                  <div>
+                    <span className="font-medium">Eredeti: {(downgradedFromConfidence * 100).toFixed(1)}%</span>
+                    {' → '}
+                    <span className="font-medium">Jelenlegi: {prediction.confidence_score.toFixed(1)}%</span>
+                  </div>
+                )}
+                {alternateOutcome && (
+                  <p>
+                    <span className="font-medium">Alternatíva:</span> {getAlternateOutcomeLabel(alternateOutcome)}
+                  </p>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {predictionStatus === 'blocked' && blockedReason && (
+          <Alert variant="destructive" className="border-red-500/50 bg-red-50/10">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertTitle>Előrejelzés Letiltva</AlertTitle>
+            <AlertDescription className="text-sm">{blockedReason}</AlertDescription>
+          </Alert>
+        )}
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -147,6 +285,142 @@ export default function PredictionDisplay({ prediction, patterns = [], formScore
               </div>
             </div>
           </CardContent>
+        </Card>
+      )}
+
+      {explanation && (
+        <Card>
+          <CardHeader>
+            <button
+              onClick={() => setExpandedExplanation(!expandedExplanation)}
+              className="w-full flex items-center justify-between hover:opacity-70 transition"
+            >
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5" />
+                Magyarázat és Elemzés
+              </CardTitle>
+              {expandedExplanation ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </button>
+          </CardHeader>
+          {expandedExplanation && (
+            <CardContent className="space-y-4">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm">{explanation.summary}</p>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-sm mb-3">Fő Tényezők:</h4>
+                <div className="space-y-2">
+                  {explanation.key_factors.map((factor, idx) => (
+                    <div key={idx} className="p-3 bg-muted/30 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm">{factor.factor}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Súly: {(factor.weight * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-1">{factor.details}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">Hozzájárulás:</span>
+                        <span className="text-xs font-medium text-green-600">
+                          {factor.contribution}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-sm mb-2">Döntési Fa:</h4>
+                <div className="space-y-1">
+                  {explanation.decision_tree.map((step, idx) => (
+                    <div key={idx} className="text-xs text-muted-foreground pl-3 py-1 border-l-2 border-muted">
+                      {step}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <h4 className="font-medium text-sm mb-2">Konfidencia Lebontása:</h4>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>Alap konfidencia:</span>
+                    <span>{(explanation.confidence_breakdown.base_confidence * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Minta Boost:</span>
+                    <span className="text-green-600">
+                      +{(explanation.confidence_breakdown.pattern_boost * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-medium border-t pt-1">
+                    <span>Végső konfidencia:</span>
+                    <span>{(explanation.confidence_breakdown.final_confidence * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
+      {decisionPath && (
+        <Card>
+          <CardHeader>
+            <button
+              onClick={() => setExpandedDecision(!expandedDecision)}
+              className="w-full flex items-center justify-between hover:opacity-70 transition"
+            >
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Döntési Útvonal
+              </CardTitle>
+              {expandedDecision ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </button>
+          </CardHeader>
+          {expandedDecision && (
+            <CardContent>
+              <div className="space-y-3">
+                {decisionPath.nodes.map((node, idx) => (
+                  <div key={idx} className="p-3 bg-muted/30 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium">
+                        {node.id}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium px-2 py-1 bg-muted rounded">
+                            {node.type}
+                          </span>
+                          {node.outcome && (
+                            <span className="text-xs text-green-600 font-medium">
+                              → {node.outcome}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{node.condition}</p>
+                        {node.confidence_contribution && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Konfidencia hozzájárulás: {(node.confidence_contribution * 100).toFixed(1)}%
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
         </Card>
       )}
     </div>

@@ -26,12 +26,24 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "react-flow-renderer": path.resolve(
-        __dirname,
-        "./src/vendor/react-flow-renderer.tsx",
-      ),
-    },
+    alias: [
+      { find: "@/analysis", replacement: path.resolve(__dirname, "./8888/analysis") },
+      { find: "@/components/alerts", replacement: path.resolve(__dirname, "./8888/components/alerts") },
+      { find: "@/components/csv", replacement: path.resolve(__dirname, "./8888/components/csv") },
+      { find: "@/components/league", replacement: path.resolve(__dirname, "./8888/components/league") },
+      { find: "@/contexts", replacement: path.resolve(__dirname, "./8888/contexts") },
+      { find: "@/hooks/useCSVPreview", replacement: path.resolve(__dirname, "./8888/hooks/useCSVPreview.ts") },
+      { find: "@/hooks/useLeagueManagement", replacement: path.resolve(__dirname, "./8888/hooks/useLeagueManagement.ts") },
+      { find: "@/services", replacement: path.resolve(__dirname, "./8888/services") },
+      { find: "@/types/csv.types", replacement: path.resolve(__dirname, "./8888/types/csv.types.ts") },
+      { find: "@/types/sportradar", replacement: path.resolve(__dirname, "./8888/types/sportradar.ts") },
+      { find: "@/utils/calculations", replacement: path.resolve(__dirname, "./8888/utils/calculations.ts") },
+      { find: "@/utils/predictionEngine", replacement: path.resolve(__dirname, "./8888/utils/predictionEngine.ts") },
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      {
+        find: "react-flow-renderer",
+        replacement: path.resolve(__dirname, "./src/vendor/react-flow-renderer.tsx"),
+      },
+    ],
   },
 });
