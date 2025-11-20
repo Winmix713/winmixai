@@ -52,6 +52,15 @@ Key data flow:
 - Modular components in `src/components/phase9` and API layer in `src/lib/phase9-api.ts`.
 - Automated tests in `src/test/phase9.test.ts` covering core behaviors.
 
+### Evaluation Logging & ID Tracking
+- **Robust Prediction Tracking**: Every prediction gets a unique UUIDv4 for end-to-end tracking from prediction to result reconciliation.
+- **CSV-based Event Sourcing**: Evaluation log stored as `/tmp/evaluation_log.csv` with atomic append operations for data integrity.
+- **Schema**: `prediction_id,timestamp,model_version,team_a,team_b,predicted_result,actual_result,confidence`
+- **Model Versioning**: Automatic git commit hash tracking or configurable model versions.
+- **Result Reconciliation**: Separate workflow for logging actual results, enabling accuracy analysis over time.
+- **Testing Suite**: Comprehensive test script (`test-evaluation-logging.ts`) validates logging, validation, and reconciliation workflows.
+- **Retention Policy**: Safe to archive/delete rows older than 90 days for performance management.
+
 ---
 
 ## 🧭 Navigation & Key Routes
@@ -209,6 +218,7 @@ Coverage summaries are printed to the console and detailed HTML/LCOV reports lan
 - **[Configuration Reference](docs/CONFIGURATION_REFERENCE.md)** - Environment variables, Supabase setup, secrets management, and feature flags
 - **[Operations Runbook](docs/OPERATIONS_RUNBOOK.md)** - Build, deploy, troubleshoot, and maintain the platform
 - **[Authentication Guide](docs/AUTHENTICATION.md)** - User authentication, authorization, OAuth setup, and security best practices
+- **[Evaluation Logging Guide](docs/EVALUATION_LOGGING.md)** - Robust prediction tracking, result reconciliation, and accuracy analysis system
 
 ### Quick Commands
 ```bash
@@ -228,6 +238,11 @@ supabase db dump > backup.sql           # Backup database
 supabase functions deploy <name>        # Deploy function
 supabase functions logs <name>          # View function logs
 supabase secrets set KEY=value          # Add secret
+
+# Evaluation Logging
+deno run test-evaluation-logging.ts     # Test evaluation logging system
+cat /tmp/evaluation_log.csv            # View evaluation log
+supabase functions invoke reconcile-prediction-result --data '{"prediction_id":"uuid","actual_result":"home_win"}'  # Reconcile prediction result
 
 # Security
 npm audit                               # Check for vulnerabilities
