@@ -204,6 +204,51 @@ Coverage summaries are printed to the console and detailed HTML/LCOV reports lan
 
 ---
 
+## 🔮 Prediction Engine
+
+The repository now ships with `prediction_engine.py`, a standalone inference harness that powers both the CLI tooling and any future server-side integrations. The engine performs strict feature validation against `model_config.yaml`, resolves the active serialized model from `models/model_registry.json`, and keeps the hydrated estimator cached via a singleton so disk I/O occurs only on the very first request. Every successful inference automatically records a row via `ml_logging.log_prediction_event`, ensuring downstream analytics (or audits) always have a traceable prediction ID.
+
+### CLI usage
+
+```bash
+python prediction_engine.py \
+  --team-a "Arsenal" \
+  --team-b "Chelsea" \
+  --features-json '{"team_form_index": 12, "opponent_form_index": 9, "avg_goals_scored": 2.1, "avg_goals_conceded": 0.8, "injury_count": 1, "rest_days": 5, "tempo_rating": 78}'
+```
+
+- Results stream to `stdout` as JSON so they can be piped into other tools.
+- Validation errors (missing/extra features) exit with code `1`; filesystem or registry issues exit with code `2`.
+- Prediction events are appended to `logs/prediction_events.csv` with the highest-probability scoreline.
+
+### Response schema
+
+The CLI and library variants both return the following JSON structure so callers can rely on a consistent contract:
+
+```json
+{
+  "prediction_id": "0fba9b43-6f06-4045-a8d4-6c94074e9885",
+  "model": {
+    "name": "baseline_scoreline_model",
+    "version": "2024.11.0",
+    "path": "models/baseline_scoreline_model.pkl"
+  },
+  "ordered_features": ["team_form_index", "opponent_form_index", "avg_goals_scored", "avg_goals_conceded", "injury_count", "rest_days", "tempo_rating"],
+  "feature_vector": [12.0, 9.0, 2.1, 0.8, 1.0, 5.0, 78.0],
+  "probabilities": {"0-0": 0.18, "1-0": 0.22, "0-1": 0.11, "2-1": 0.15, "1-2": 0.09, "2-0": 0.12, "0-2": 0.08, "Other": 0.05},
+  "predicted_result": "1-0",
+  "confidence": 0.22,
+  "context": {
+    "team_a": "Arsenal",
+    "team_b": "Chelsea"
+  }
+}
+```
+
+Supplementary Python unit tests live under `tests/test_prediction_engine.py` and assert the singleton loader semantics along with payload validation safety nets.
+
+---
+
 ## 📣 Integration Notes
 - All feature branches (Phases 3 → 9) have been merged sequentially into `integration/merge-phases-3-4-6-7-8-9` with navigation, routes, and domain types normalized to avoid duplication.
 - Shared UI elements (e.g., `Sidebar`, `App.tsx`) have consolidated imports and route registrations to surface every phase feature consistently.
