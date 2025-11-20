@@ -304,6 +304,93 @@ npm audit fix                           # Fix auto-fixable issues
 
 ---
 
+## 🤖 Model Training Pipeline
+
+The platform includes a robust CLI tool for training and managing machine learning models with full reproducibility and versioning support.
+
+### Quick Start
+
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Train a model with default settings
+python train_model.py
+
+# Train with custom data
+python train_model.py --data-path data/custom_dataset.csv
+
+# Dry run (train but don't save)
+python train_model.py --dry-run
+
+# Use custom random seed
+python train_model.py --random-seed 123
+```
+
+### Training Workflow
+
+1. **Prerequisites**: Python 3.9+ is required
+
+2. **Install Dependencies**: Install required Python packages with pinned versions
+   ```bash
+   # It's recommended to use a virtual environment
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. **Prepare Data**: Ensure your training dataset CSV contains all features defined in `model_config.yaml`
+   - Default location: `data/training_dataset.csv`
+   - Must include all `input_features` and the `target_column`
+
+4. **Configure Model**: Edit `model_config.yaml` to specify:
+   - `model_type`: `LogisticRegression` or `DecisionTree`
+   - `input_features`: List of feature column names
+   - `target_column`: Target variable name
+   - `hyperparameters`: Model-specific parameters
+
+5. **Run Training**: Execute the training script
+   ```bash
+   python train_model.py
+   ```
+
+6. **Check Results**: 
+   - Trained model saved to `models/<algorithm>_<YYYYMMDD_HHMMSS>.pkl`
+   - Registry updated in `models/model_registry.json`
+   - Evaluation metrics printed to console
+
+### Features
+
+- **Reproducibility**: Fixed random seed (default: 42) ensures identical results across runs
+- **Versioning**: Timestamped model files prevent accidental overwrites
+- **Comprehensive Metrics**: Accuracy, Precision, Recall, and F1-Score for all models
+- **Registry Management**: JSON registry tracks all trained models with metadata
+- **Error Handling**: Clear validation messages for missing features or malformed data
+- **Dry Run Mode**: Test training without saving artifacts
+
+### Model Registry
+
+Each trained model is registered with:
+- `id`: Unique UUID for the training run
+- `timestamp`: ISO 8601 timestamp
+- `metrics`: Performance scores (accuracy, precision, recall, f1_score)
+- `parameters`: Hyperparameters used for training
+- `model_path`: Relative path to the serialized model file
+- `status`: Model status (`candidate` by default, can be promoted to `active`)
+- `random_seed`: Seed used for reproducibility
+- `features`: List of input features
+- `target`: Target column name
+
+### Troubleshooting
+
+**Missing columns error**: Ensure your CSV contains all features listed in `model_config.yaml`
+
+**Import errors**: Verify all dependencies are installed: `pip install -r requirements.txt`
+
+**Registry corruption**: The script handles corrupted registries automatically by creating a new one
+
+---
+
 ## 🤝 Contributing
 1. Create feature branches off the integration branch (`integration/merge-phases-3-4-6-7-8-9`).
 2. Follow the established folder conventions (`components/<feature>`, `pages/<Feature>.tsx`).
