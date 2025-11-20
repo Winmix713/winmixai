@@ -44,3 +44,7 @@ __pycache__/
 
 # ML Models
 models/*.pkl
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/

@@ -40,6 +40,7 @@ const Phase9SettingsPage = React.lazy(() => import('@/pages/admin/phase9/Phase9S
 const HealthDashboard = React.lazy(() => import('@/pages/admin/HealthDashboard'));
 const IntegrationsPage = React.lazy(() => import('@/pages/admin/IntegrationsPage'));
 const StatsPage = React.lazy(() => import('@/pages/admin/StatsPage'));
+const ModelStatusDashboard = React.lazy(() => import('@/pages/admin/ModelStatusDashboard'));
 
 // Import admin components when needed
 import RoleGate from '@/components/admin/RoleGate';
@@ -251,6 +252,18 @@ const AppRoutes: React.FC = () => {
             <RoleGate allowedRoles={["admin", "analyst"]}>
               <Suspense fallback={<PageLoading message="Loading integrations..." />}>
                 <IntegrationsPage />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/admin/model-status"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading model status..." />}>
+                <ModelStatusDashboard />
               </Suspense>
             </RoleGate>
           </AuthGate>

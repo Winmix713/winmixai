@@ -1,4 +1,4 @@
-import { Home, Users, Calendar as CalendarIcon, Trophy, Settings, Sparkles, Clock, Brain, LayoutDashboard, ListChecks, LineChart, FlaskConical, Network, Activity, Shield, Key, Bot } from "lucide-react";
+import { Home, Users, Calendar as CalendarIcon, Trophy, Settings, Sparkles, Clock, Brain, LayoutDashboard, ListChecks, LineChart, FlaskConical, Network, Activity, Shield, Key, Bot, Gauge } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { usePhaseFlags } from "@/hooks/usePhaseFlags";
 import React from "react";
@@ -82,6 +82,7 @@ const Sidebar = () => {
               </>
             )}
 
+            <NavIconLink to="/admin/model-status" Icon={Gauge} />
             <NavIconLink to="/admin/environment" Icon={Key} />
           </div>
         </div>
