@@ -13,6 +13,15 @@ serve(async (req) => {
   }
 
   try {
+    // Parse request body for window_days parameter
+    let windowDays = 7; // default
+    if (req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      if (body.window_days && typeof body.window_days === "number" && body.window_days > 0) {
+        windowDays = body.window_days;
+      }
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -51,19 +60,19 @@ serve(async (req) => {
     // Get predictions with results for accuracy tracking
     const { data: predictions } = await supabaseClient
       .from("predictions")
-      .select("id, confidence, predicted_result, actual_result, created_at")
-      .not("actual_result", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(100);
+      .select("id, confidence_score, predicted_outcome, actual_outcome, created_at")
+      .not("actual_outcome", "is", null)
+      .gte("created_at", `now() - interval '${windowDays} days'`)
+      .order("created_at", { ascending: false });
 
     // Calculate metrics
     const total = predictions?.length || 0;
     const correct =
-      predictions?.filter((p) => p.predicted_result === p.actual_result).length ||
+      predictions?.filter((p) => p.predicted_outcome === p.actual_outcome).length ||
       0;
     const accuracy = total > 0 ? (correct / total) * 100 : 0;
 
-    // Calculate fail rate (last 100 records)
+    // Calculate fail rate
     const failRate = total > 0 ? ((total - correct) / total) * 100 : 0;
 
     // Group by date for time series
@@ -73,10 +82,10 @@ serve(async (req) => {
       const date = new Date(p.created_at).toISOString().split("T")[0];
       const stats = dailyStats.get(date) || { total: 0, correct: 0, avgConfidence: 0 };
       stats.total += 1;
-      if (p.predicted_result === p.actual_result) {
+      if (p.predicted_outcome === p.actual_outcome) {
         stats.correct += 1;
       }
-      stats.avgConfidence += p.confidence || 0;
+      stats.avgConfidence += p.confidence_score || 0;
       dailyStats.set(date, stats);
     });
 
@@ -91,8 +100,8 @@ serve(async (req) => {
     // Confidence trend
     const confidenceTrend = predictions?.map((p) => ({
       timestamp: p.created_at,
-      confidence: p.confidence || 0,
-      isCorrect: p.predicted_result === p.actual_result,
+      confidence: p.confidence_score || 0,
+      isCorrect: p.predicted_outcome === p.actual_outcome,
     })) || [];
 
     const response = {
@@ -101,10 +110,11 @@ serve(async (req) => {
         correctPredictions: correct,
         accuracy: parseFloat(accuracy.toFixed(2)),
         failRate: parseFloat(failRate.toFixed(2)),
-        avgConfidence: predictions?.reduce((sum, p) => sum + (p.confidence || 0), 0) / total || 0,
+        avgConfidence: predictions?.reduce((sum, p) => sum + (p.confidence_score || 0), 0) / total || 0,
       },
       timeSeriesData,
       confidenceTrend,
+      windowDays,
       systemStatus: failRate > 30 ? "degraded" : failRate > 15 ? "warning" : "healthy",
     };
 

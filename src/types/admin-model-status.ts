@@ -59,6 +59,7 @@ export interface AnalyticsResponse {
   };
   timeSeriesData: TimeSeriesPoint[];
   confidenceTrend: ConfidenceTrendPoint[];
+  windowDays: number;
   systemStatus: "healthy" | "warning" | "degraded";
 }
 
