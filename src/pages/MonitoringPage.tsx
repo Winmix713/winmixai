@@ -35,6 +35,7 @@ import SystemHealthCard from "@/components/monitoring/SystemHealthCard";
 import PerformanceMetricsChart, { MetricsPoint } from "@/components/monitoring/PerformanceMetricsChart";
 import ComputationMapDashboard from "@/components/monitoring/ComputationMapDashboard";
 import { PredictionDecayCard } from "@/components/monitoring/PredictionDecayCard";
+import { PredictionConfidenceChart } from "@/components/admin/model-status/PredictionConfidenceChart";
 import { supabase } from "@/integrations/supabase/client";
 import type { 
   AlertsResponse, 
@@ -109,6 +110,23 @@ const useLatestRetrainingRun = () =>
     refetchInterval: 30000,
   });
 
+const useLatestRetrainSuggestion = () =>
+  useQuery({
+    queryKey: ["retrain-suggestion", "latest"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("retrain_suggestion_log")
+        .select("*")
+        .eq("status", "pending")
+        .order("suggested_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (error && error.code !== "PGRST116") throw new Error(error.message);
+      return data;
+    },
+    refetchInterval: 30000,
+  });
+
 const ADMIN_QUICK_LINKS: AdminQuickLink[] = [
   {
     id: '1',
@@ -165,6 +183,7 @@ export default function MonitoringPage() {
   const graphQuery = useGraph();
   const alertsQuery = useAlerts();
   const retrainingQuery = useLatestRetrainingRun();
+  const retrainSuggestionQuery = useLatestRetrainSuggestion();
 
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [selectedLinkCategory, setSelectedLinkCategory] = useState<string>("all");
@@ -198,6 +217,23 @@ export default function MonitoringPage() {
     onSuccess: () => {
       setShowRetrainingForm(false);
       setRetrainingReason("");
+      void retrainingQuery.refetch();
+    },
+  });
+
+  const retrainSuggestionActionMutation = useMutation({
+    mutationFn: async ({ suggestionId, action, notes }: { suggestionId: string; action: "accept" | "dismiss"; notes?: string }) => {
+      const { data, error } = await supabase.functions.invoke(
+        "retrain-suggestion-action",
+        {
+          body: { suggestionId, action, notes },
+        }
+      );
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      void retrainSuggestionQuery.refetch();
       void retrainingQuery.refetch();
     },
   });
@@ -425,10 +461,18 @@ export default function MonitoringPage() {
             {/* Auto Reinforcement Status */}
             <Card className="border-border/60 bg-muted/20 mb-8">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  Model Auto Reinforcement
-                </CardTitle>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" />
+                    Model Auto Reinforcement
+                  </CardTitle>
+                  {retrainSuggestionQuery.data && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      Retrain javasolt
+                    </Badge>
+                  )}
+                </div>
                 <Button
                   onClick={() => setShowRetrainingForm(!showRetrainingForm)}
                   variant="default"
@@ -484,6 +528,61 @@ export default function MonitoringPage() {
                       {retrainingMutation.isSuccess && (
                         <div className="text-sm text-green-600">
                           ✓ Retraining request queued successfully
+                        </div>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Retrain Suggestion Alert */}
+                {retrainSuggestionQuery.data && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Retrain Suggestion</AlertTitle>
+                    <AlertDescription className="space-y-3">
+                      <div>
+                        <p className="text-sm">
+                          Model accuracy has dropped to <strong>{retrainSuggestionQuery.data.accuracy}%</strong> in the last {retrainSuggestionQuery.data.window_days} days, which is below the 70% threshold.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Suggested: {new Date(retrainSuggestionQuery.data.suggested_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => retrainSuggestionActionMutation.mutate({
+                            suggestionId: retrainSuggestionQuery.data.id,
+                            action: "accept",
+                            notes: `Accepted suggestion: Accuracy ${retrainSuggestionQuery.data.accuracy}% below 70% threshold`
+                          })}
+                          disabled={retrainSuggestionActionMutation.isPending}
+                          size="sm"
+                          variant="default"
+                        >
+                          {retrainSuggestionActionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Elfogadom
+                        </Button>
+                        <Button
+                          onClick={() => retrainSuggestionActionMutation.mutate({
+                            suggestionId: retrainSuggestionQuery.data.id,
+                            action: "dismiss",
+                            notes: "Dismissed by admin"
+                          })}
+                          disabled={retrainSuggestionActionMutation.isPending}
+                          size="sm"
+                          variant="outline"
+                        >
+                          Elutasítom
+                        </Button>
+                      </div>
+                      {retrainSuggestionActionMutation.isError && (
+                        <div className="text-sm text-destructive">
+                          Error: {retrainSuggestionActionMutation.error instanceof Error ? retrainSuggestionActionMutation.error.message : "Unknown error"}
+                        </div>
+                      )}
+                      {retrainSuggestionActionMutation.isSuccess && (
+                        <div className="text-sm text-green-600">
+                          ✓ Suggestion processed successfully
                         </div>
                       )}
                     </AlertDescription>
@@ -596,6 +695,9 @@ export default function MonitoringPage() {
                 <PerformanceMetricsChart data={metricsData} />
               </CardContent>
             </Card>
+
+            {/* Prediction Confidence Chart */}
+            <PredictionConfidenceChart className="mb-8" />
 
             {/* Quick Links */}
             <Card className="border-border/60 bg-muted/20 mb-8">

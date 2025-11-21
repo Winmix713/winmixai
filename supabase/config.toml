@@ -1,6 +1,15 @@
 project_id = "wclutzbojatqtxwlvtab"
 
 # =============================================================================
+# CRON JOBS CONFIGURATION
+# =============================================================================
+# Scheduled tasks that run automatically at specified intervals
+
+[cron.retrain-suggestion-check]
+schedule = "0 * * * *"  # Run every hour at minute 0
+method = "POST"
+
+# =============================================================================
 # JWT VERIFICATION CONFIGURATION
 # =============================================================================
 # This section explicitly configures JWT verification for all Edge Functions.
@@ -130,4 +139,11 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.phase9-temporal-decay]
+verify_jwt = true
+
+# Model Retraining Suggestions
+[functions.retrain-suggestion-check]
+verify_jwt = false
+
+[functions.retrain-suggestion-action]
 verify_jwt = true
