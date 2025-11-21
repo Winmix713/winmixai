@@ -30,7 +30,6 @@ const MatchDetail = React.lazy(() => import('@/pages/MatchDetail'));
 const ScheduledJobsPage = React.lazy(() => import('@/pages/ScheduledJobsPage'));
 const ModelsPage = React.lazy(() => import('@/pages/ModelsPage'));
 const MonitoringPage = React.lazy(() => import('@/pages/MonitoringPage'));
-const SoccerChampionship = React.lazy(() => import('@/pages/SoccerChampionship'));
 const AIChat = React.lazy(() => import('@/pages/AIChat'));
 
 // Lazy load admin components
@@ -56,21 +55,11 @@ const AppRoutes: React.FC = () => {
       {/* Public routes - no auth required */}
       <Route path="/" element={<AuthGate requireAuth={false}><Index /></AuthGate>} />
       <Route path="/login" element={<AuthGate requireAuth={false}><Login /></AuthGate>} />
-      <Route path="/signup" element={<AuthGate requireAuth={false}><Signup /></AuthGate>} />
-      <Route path="/unauthorized" element={<AuthGate requireAuth={false}><Unauthorized /></AuthGate>} />
-      <Route path="/feature-flags" element={<AuthGate requireAuth={false}><FeatureFlagsDemo /></AuthGate>} />
-      <Route 
-        path="/championship"
-        element={
-          <AuthGate requireAuth={false}>
-            <Suspense fallback={<PageLoading message="Loading championship..." />}>
-              <SoccerChampionship />
-            </Suspense>
-          </AuthGate>
-        }
-      />
-      
-      {/* Demo routes - accessible to all (read-only for unauthenticated) */}
+       <Route path="/signup" element={<AuthGate requireAuth={false}><Signup /></AuthGate>} />
+       <Route path="/unauthorized" element={<AuthGate requireAuth={false}><Unauthorized /></AuthGate>} />
+       <Route path="/feature-flags" element={<AuthGate requireAuth={false}><FeatureFlagsDemo /></AuthGate>} />
+
+       {/* Demo routes - accessible to all (read-only for unauthenticated) */}
       <Route path="/predictions" element={<AuthGate requireAuth={false}><PredictionsView /></AuthGate>} />
       <Route path="/matches" element={<AuthGate requireAuth={false}><Matches /></AuthGate>} />
       <Route 

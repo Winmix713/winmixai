@@ -50,12 +50,6 @@ const HeroSection = () => {
                       <Wifi className="w-4 h-4" /> Valós idő
                     </div>
                   </div>
-
-                  <div className="mt-2">
-                    <Link to="/championship" className="text-xs text-primary underline hover:text-primary/80">
-                      Kattints ide a SoccerChampionship oldal megtekintéséhez
-                    </Link>
-                  </div>
                   
                   {/* Two stacked metric rows */}
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">

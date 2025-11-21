@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Brain, Trophy, Menu, X } from "lucide-react";
+import { Calendar, Brain, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Header = () => {
@@ -30,19 +30,15 @@ const Header = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#matches" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-              <Calendar className="w-4 h-4" />
-              <span>Mérkőzések</span>
-            </a>
-            <a href="#analysis" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-              <Brain className="w-4 h-4" />
-              <span>V-Sports Elemzés</span>
-            </a>
-            <a href="#championship" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-              <Trophy className="w-4 h-4" />
-              <span>Bajnokság</span>
-            </a>
-          </nav>
+             <a href="#matches" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
+               <Calendar className="w-4 h-4" />
+               <span>Mérkőzések</span>
+             </a>
+             <a href="#analysis" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
+               <Brain className="w-4 h-4" />
+               <span>V-Sports Elemzés</span>
+             </a>
+           </nav>
 
           <div className="hidden md:flex items-center gap-3">
             <Button variant="ghost" className="glass-card-hover">
@@ -62,31 +58,27 @@ const Header = () => {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden mt-4 glass-card rounded-xl p-4 animate-slide-in-bottom">
-            <nav className="flex flex-col gap-4">
-              <a href="#matches" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-                <Calendar className="w-4 h-4" />
-                <span>Mérkőzések</span>
-              </a>
-              <a href="#analysis" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-                <Brain className="w-4 h-4" />
-                <span>V-Sports Elemzés</span>
-              </a>
-              <a href="#championship" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-                <Trophy className="w-4 h-4" />
-                <span>Bajnokság</span>
-              </a>
-              <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
-                <Button variant="ghost" className="glass-card-hover w-full">
-                  Bejelentkezés
-                </Button>
-                <Button className="bg-gradient-to-r from-blue-500 to-blue-600 w-full">
-                  Regisztráció
-                </Button>
-              </div>
-            </nav>
-          </div>
-        )}
+           <div className="md:hidden mt-4 glass-card rounded-xl p-4 animate-slide-in-bottom">
+             <nav className="flex flex-col gap-4">
+               <a href="#matches" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
+                 <Calendar className="w-4 h-4" />
+                 <span>Mérkőzések</span>
+               </a>
+               <a href="#analysis" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
+                 <Brain className="w-4 h-4" />
+                 <span>V-Sports Elemzés</span>
+               </a>
+               <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
+                 <Button variant="ghost" className="glass-card-hover w-full">
+                   Bejelentkezés
+                 </Button>
+                 <Button className="bg-gradient-to-r from-blue-500 to-blue-600 w-full">
+                   Regisztráció
+                 </Button>
+               </div>
+             </nav>
+           </div>
+         )}
       </div>
     </header>
   );
