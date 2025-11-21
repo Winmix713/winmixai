@@ -7,6 +7,7 @@ import { Activity, Database, TrendingUp, Loader2 } from "lucide-react";
 import { ModelManagementPanel } from "@/components/admin/model-status/ModelManagementPanel";
 import { AnalyticsPanel } from "@/components/admin/model-status/AnalyticsPanel";
 import { DataConfigurationPanel } from "@/components/admin/model-status/DataConfigurationPanel";
+import { SystemLogTable } from "@/components/admin/model-status/SystemLogTable";
 import {
   getSystemStatus,
   getAnalytics,
@@ -164,6 +165,9 @@ export default function ModelStatusDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* System Logs */}
+      <SystemLogTable />
 
       {/* Main Tabs */}
       <Tabs defaultValue="models" className="w-full">

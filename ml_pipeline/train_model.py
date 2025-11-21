@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
+import traceback
 import yaml
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, f1_score, precision_score, recall_score
@@ -21,6 +22,7 @@ from sklearn.tree import DecisionTreeClassifier
 import joblib
 
 from .config import DEBUG, LOG_LEVEL, MODELS_DIR, RETRAINED_MODELS_DIR
+from .supabase_client import insert_system_log
 
 # Configure logging
 logging.basicConfig(
@@ -321,41 +323,93 @@ def main():
     logger.info(f"Epochs: {args.epochs}")
     logger.info("="*60)
 
-    # Initialize trainer
-    trainer = ModelTrainer(config_path=args.config, random_seed=args.random_seed)
+    # Log training start
+    insert_system_log(
+        component="train_model",
+        status="info",
+        message=f"Training started: {'fine-tune' if args.fine_tune else 'from scratch'}",
+        details={
+            "dataset": args.dataset,
+            "fine_tune": args.fine_tune,
+            "learning_rate": args.learning_rate,
+            "epochs": args.epochs,
+        }
+    )
 
-    # Load configuration
-    trainer.load_config()
+    try:
+        # Initialize trainer
+        trainer = ModelTrainer(config_path=args.config, random_seed=args.random_seed)
 
-    # Load and validate data
-    X, y = trainer.load_data(args.dataset)
+        # Load configuration
+        trainer.load_config()
 
-    # Create or load model
-    if args.fine_tune and args.model_path:
-        trainer.load_existing_model(args.model_path)
-    else:
-        trainer.create_model(learning_rate=args.learning_rate if args.fine_tune else None)
+        # Load and validate data
+        X, y = trainer.load_data(args.dataset)
+        
+        # Log dataset prepared
+        insert_system_log(
+            component="train_model",
+            status="info",
+            message=f"Dataset prepared: {len(X)} samples",
+            details={"dataset_size": len(X), "features": len(X.columns)}
+        )
 
-    # Train and evaluate
-    metrics = trainer.train_and_evaluate(X, y)
+        # Create or load model
+        if args.fine_tune and args.model_path:
+            trainer.load_existing_model(args.model_path)
+        else:
+            trainer.create_model(learning_rate=args.learning_rate if args.fine_tune else None)
 
-    # Save model
-    output_dir = args.output_dir or (str(RETRAINED_MODELS_DIR) if args.fine_tune else str(MODELS_DIR))
-    model_path = trainer.save_model(output_dir)
+        # Train and evaluate
+        metrics = trainer.train_and_evaluate(X, y)
 
-    # Output metrics as JSON for integration with auto_reinforcement.py
-    metrics_output = {
-        "status": "success",
-        "model_path": model_path,
-        "metrics": metrics,
-        "dataset_size": len(X),
-        "timestamp": datetime.now().isoformat(),
-    }
+        # Save model
+        output_dir = args.output_dir or (str(RETRAINED_MODELS_DIR) if args.fine_tune else str(MODELS_DIR))
+        model_path = trainer.save_model(output_dir)
 
-    print(json.dumps(metrics_output, indent=2))
-    logger.info("Training completed successfully")
+        # Log training success
+        insert_system_log(
+            component="train_model",
+            status="info",
+            message=f"Training completed successfully",
+            details={
+                "metrics": metrics,
+                "model_path": model_path,
+                "dataset_size": len(X),
+            }
+        )
 
-    return 0
+        # Output metrics as JSON for integration with auto_reinforcement.py
+        metrics_output = {
+            "status": "success",
+            "model_path": model_path,
+            "metrics": metrics,
+            "dataset_size": len(X),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        print(json.dumps(metrics_output, indent=2))
+        logger.info("Training completed successfully")
+
+        return 0
+    
+    except Exception as e:
+        # Log error with stack trace
+        error_details = {
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "traceback": traceback.format_exc(),
+        }
+        
+        insert_system_log(
+            component="train_model",
+            status="error",
+            message=f"Training failed: {str(e)}",
+            details=error_details
+        )
+        
+        logger.error(f"Training failed: {e}", exc_info=True)
+        return 1
 
 
 if __name__ == "__main__":
