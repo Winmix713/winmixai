@@ -32,12 +32,13 @@ export async function getSystemStatus(): Promise<SystemStatusResponse> {
   }
 }
 
-export async function getAnalytics(): Promise<AnalyticsResponse> {
+export async function getAnalytics(windowDays?: number): Promise<AnalyticsResponse> {
   try {
     const { data, error } = await supabase.functions.invoke(
       "admin-model-analytics",
       {
-        method: "GET",
+        method: "POST",
+        body: windowDays ? { window_days: windowDays } : {},
       }
     );
 

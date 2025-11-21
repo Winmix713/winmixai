@@ -15,6 +15,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { PredictionConfidenceChart } from "./PredictionConfidenceChart";
 import type { AnalyticsResponse } from "@/types/admin-model-status";
 
 interface AnalyticsPanelProps {
@@ -39,6 +40,9 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
 
   return (
     <div className="space-y-6">
+      {/* Prediction Confidence Chart */}
+      <PredictionConfidenceChart />
+
       {/* System Status Alert */}
       {systemStatus === "degraded" && (
         <Alert variant="destructive">
