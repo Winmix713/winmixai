@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Activity, Database, TrendingUp, Loader2 } from "lucide-react";
-import { ModelManagementPanel } from "@/components/admin/model-status/ModelManagementPanel";
 import { AnalyticsPanel } from "@/components/admin/model-status/AnalyticsPanel";
 import { DataConfigurationPanel } from "@/components/admin/model-status/DataConfigurationPanel";
 import { SystemLogTable } from "@/components/admin/model-status/SystemLogTable";
+import { ModelStatusCard } from "@/components/admin/model-status/ModelStatusCard";
+import { ModelRegistryTable } from "@/components/admin/model-status/ModelRegistryTable";
+import { useModelRegistry, MODEL_REGISTRY_QUERY_KEY } from "@/hooks/useModelRegistry";
 import {
   getSystemStatus,
   getAnalytics,
@@ -18,7 +20,6 @@ import {
 export default function ModelStatusDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isPromoting, setIsPromoting] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
 
   const {
@@ -41,18 +42,39 @@ export default function ModelStatusDashboard() {
     refetchInterval: 60000, // Refetch every minute
   });
 
+  const {
+    data: registryModels = [],
+    isLoading: isLoadingRegistry,
+    error: registryError,
+  } = useModelRegistry();
+
+  const sortedRegistryModels = useMemo(
+    () =>
+      [...registryModels].sort(
+        (a, b) => new Date(b.registered_at).getTime() - new Date(a.registered_at).getTime()
+      ),
+    [registryModels]
+  );
+  const activeRegistryModel = useMemo(
+    () => sortedRegistryModels.find((model) => model.status === "active") ?? null,
+    [sortedRegistryModels]
+  );
+
+  const [promotingModelId, setPromotingModelId] = useState<string | null>(null);
+  const isPromoting = promotingModelId !== null;
+
   const promoteModelMutation = useMutation({
-    mutationFn: (modelId: string) => {
-      setIsPromoting(true);
-      return promoteModel({ modelId });
+    mutationFn: (modelId: string) => promoteModel({ modelId }),
+    onMutate: (modelId: string) => {
+      setPromotingModelId(modelId);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-model-system-status"] });
+      queryClient.invalidateQueries({ queryKey: MODEL_REGISTRY_QUERY_KEY });
       toast({
         title: "Model Promoted",
         description: data.message,
       });
-      setIsPromoting(false);
     },
     onError: (error) => {
       toast({
@@ -60,7 +82,9 @@ export default function ModelStatusDashboard() {
         description: error.message || "Failed to promote model.",
         variant: "destructive",
       });
-      setIsPromoting(false);
+    },
+    onSettled: () => {
+      setPromotingModelId(null);
     },
   });
 
@@ -77,6 +101,7 @@ export default function ModelStatusDashboard() {
       // Set a timeout to auto-refresh after estimated time
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ["admin-model-system-status"] });
+        queryClient.invalidateQueries({ queryKey: MODEL_REGISTRY_QUERY_KEY });
         setIsTraining(false);
       }, 10000); // 10 seconds for demo purposes
     },
@@ -90,7 +115,10 @@ export default function ModelStatusDashboard() {
     },
   });
 
-  if (isLoadingSystem || isLoadingAnalytics) {
+  const isLoadingAny = isLoadingSystem || isLoadingAnalytics || isLoadingRegistry;
+  const loadError = systemError || analyticsError || registryError;
+
+  if (isLoadingAny) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -103,14 +131,14 @@ export default function ModelStatusDashboard() {
     );
   }
 
-  if (systemError || analyticsError) {
+  if (loadError) {
     return (
       <div className="container mx-auto p-6">
         <Card>
           <CardHeader>
             <CardTitle>Error Loading Dashboard</CardTitle>
             <CardDescription>
-              {systemError?.message || analyticsError?.message || "An error occurred"}
+              {loadError.message || "An error occurred"}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -128,6 +156,13 @@ export default function ModelStatusDashboard() {
           </p>
         </div>
       </div>
+
+      <ModelStatusCard
+        model={activeRegistryModel}
+        isLoading={isLoadingRegistry}
+        isRetraining={isTraining}
+        onTriggerTraining={() => triggerTrainingMutation.mutate()}
+      />
 
       {/* System Overview Card */}
       <Card>
@@ -187,16 +222,12 @@ export default function ModelStatusDashboard() {
         </TabsList>
 
         <TabsContent value="models" className="mt-6">
-          {systemStatus && (
-            <ModelManagementPanel
-              models={systemStatus.models}
-              activeModel={systemStatus.activeModel}
-              onPromoteModel={(modelId) => promoteModelMutation.mutate(modelId)}
-              onTriggerTraining={() => triggerTrainingMutation.mutate()}
-              isPromoting={isPromoting}
-              isTraining={isTraining}
-            />
-          )}
+          <ModelRegistryTable
+            models={sortedRegistryModels}
+            onPromoteModel={(modelId) => promoteModelMutation.mutate(modelId)}
+            isPromoting={isPromoting}
+            promotingModelId={promotingModelId}
+          />
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">
