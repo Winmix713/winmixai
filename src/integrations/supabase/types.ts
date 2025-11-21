@@ -685,6 +685,53 @@ export type Database = {
           created_at?: string | null
         }
         Relationships: []
+      feedback: {
+        Row: {
+          id: string
+          prediction_id: string
+          user_suggestion: string
+          submitted_by: string | null
+          metadata: Json | null
+          resolved: boolean
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          prediction_id: string
+          user_suggestion: string
+          submitted_by?: string | null
+          metadata?: Json | null
+          resolved?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          prediction_id?: string
+          user_suggestion?: string
+          submitted_by?: string | null
+          metadata?: Json | null
+          resolved?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: false
+            referencedRelation: "predictions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

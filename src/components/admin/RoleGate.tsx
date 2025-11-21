@@ -1,5 +1,6 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useEffect, type ReactNode } from "react";
 import { Loader2, ShieldAlert } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import type { UserRole } from "@/providers/AuthProvider";
 import {
@@ -33,6 +34,13 @@ const DefaultFallback = () => (
 
 const RoleGate = ({ allowedRoles, children, fallback, loadingMessage = "Checking permissions" }: RoleGateProps) => {
   const { profile, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && profile && !allowedRoles.includes(profile.role)) {
+      navigate("/unauthorized", { replace: true });
+    }
+  }, [loading, profile, allowedRoles, navigate]);
 
   if (loading) {
     return (
