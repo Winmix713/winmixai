@@ -8,6 +8,7 @@ import logging
 import os
 import subprocess
 import sys
+import traceback
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +27,7 @@ from .supabase_client import (
     get_pending_retraining_requests,
     get_supabase_client,
     insert_retraining_run,
+    insert_system_log,
     update_retraining_request,
     update_retraining_run,
     upload_file_to_storage,
@@ -213,6 +215,18 @@ def run_auto_reinforcement(lookback_days: int = DEFAULT_LOOKBACK_DAYS, source: s
         logger.info(f"Source: {source}")
         logger.info(f"Lookback days: {lookback_days}")
         
+        # Log auto reinforcement start
+        insert_system_log(
+            component="auto_reinforcement",
+            status="info",
+            message=f"Auto reinforcement started: {source}",
+            details={
+                "run_id": run_id,
+                "source": source,
+                "lookback_days": lookback_days,
+            }
+        )
+        
         # Create retraining run record
         run_record = {
             "id": run_id,
@@ -228,6 +242,12 @@ def run_auto_reinforcement(lookback_days: int = DEFAULT_LOOKBACK_DAYS, source: s
             logger.info(f"Created retraining run record: {run_id}")
         except Exception as e:
             logger.error(f"Failed to create retraining run record: {e}")
+            insert_system_log(
+                component="auto_reinforcement",
+                status="error",
+                message=f"Failed to create retraining run record: {str(e)}",
+                details={"run_id": run_id, "error": str(e)}
+            )
             return False
         
         # Prepare retraining data
@@ -236,6 +256,17 @@ def run_auto_reinforcement(lookback_days: int = DEFAULT_LOOKBACK_DAYS, source: s
         
         if dataset_path is None or error_count < MIN_ERROR_SAMPLES_FOR_RETRAINING:
             logger.warning(f"Insufficient errors for retraining: {error_count} samples (min: {MIN_ERROR_SAMPLES_FOR_RETRAINING})")
+            
+            insert_system_log(
+                component="auto_reinforcement",
+                status="warning",
+                message=f"Insufficient error samples for retraining: {error_count}",
+                details={
+                    "run_id": run_id,
+                    "error_count": error_count,
+                    "min_required": MIN_ERROR_SAMPLES_FOR_RETRAINING,
+                }
+            )
             
             # Update run record as completed (no action needed)
             update_retraining_run(run_id, {
@@ -255,6 +286,18 @@ def run_auto_reinforcement(lookback_days: int = DEFAULT_LOOKBACK_DAYS, source: s
             return True
         
         logger.info(f"Prepared dataset with {error_count} error samples")
+        
+        # Log dataset prepared
+        insert_system_log(
+            component="auto_reinforcement",
+            status="info",
+            message=f"Dataset prepared: {error_count} error samples",
+            details={
+                "run_id": run_id,
+                "dataset_size": error_count,
+                "dataset_path": dataset_path,
+            }
+        )
         
         # Update run record with dataset size
         update_retraining_run(run_id, {"dataset_size": error_count})
@@ -284,6 +327,19 @@ def run_auto_reinforcement(lookback_days: int = DEFAULT_LOOKBACK_DAYS, source: s
         logger.info(f"Training metrics: {metrics}")
         logger.info(f"Model saved to: {model_path}")
         
+        # Log training success
+        insert_system_log(
+            component="auto_reinforcement",
+            status="info",
+            message="Training completed successfully",
+            details={
+                "run_id": run_id,
+                "metrics": metrics,
+                "model_path": model_path,
+                "dataset_size": error_count,
+            }
+        )
+        
         # Update run record with completion
         update_retraining_run(run_id, {
             "status": "completed",
@@ -307,6 +363,21 @@ def run_auto_reinforcement(lookback_days: int = DEFAULT_LOOKBACK_DAYS, source: s
         
     except Exception as e:
         logger.error(f"Auto reinforcement failed: {e}", exc_info=True)
+        
+        # Log error with stack trace
+        error_details = {
+            "run_id": run_id,
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "traceback": traceback.format_exc(),
+        }
+        
+        insert_system_log(
+            component="auto_reinforcement",
+            status="error",
+            message=f"Auto reinforcement failed: {str(e)}",
+            details=error_details
+        )
         
         # Update run record with failure
         try:

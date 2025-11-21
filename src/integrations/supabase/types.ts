@@ -659,6 +659,33 @@ export type Database = {
         }
         Relationships: []
       }
+      system_logs: {
+        Row: {
+          id: string
+          component: string
+          status: "info" | "warning" | "error"
+          message: string | null
+          details: Json | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          component: string
+          status: "info" | "warning" | "error"
+          message?: string | null
+          details?: Json | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          component?: string
+          status?: "info" | "warning" | "error"
+          message?: string | null
+          details?: Json | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

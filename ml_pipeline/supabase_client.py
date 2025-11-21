@@ -202,3 +202,35 @@ def update_retraining_request(request_id: str, update_data: dict) -> dict:
     except Exception as e:
         logger.error(f"Failed to update retraining request {request_id}: {str(e)}")
         raise
+
+
+def insert_system_log(component: str, status: str, message: str, details: Optional[dict] = None) -> bool:
+    """
+    Insert a system log entry. Handles connectivity failures gracefully.
+    
+    Args:
+        component: Source component (e.g., 'train_model', 'auto_reinforcement')
+        status: Log status ('info', 'warning', 'error')
+        message: Human-readable log message
+        details: Optional additional structured data
+        
+    Returns:
+        True if logged successfully, False otherwise
+    """
+    try:
+        client = get_supabase_client()
+        
+        log_data = {
+            "component": component,
+            "status": status,
+            "message": message,
+            "details": details or {},
+        }
+        
+        client.table("system_logs").insert(log_data).execute()
+        logger.debug(f"System log inserted: {component} - {status} - {message}")
+        return True
+    except Exception as e:
+        # Gracefully handle logging failures - don't crash the pipeline
+        logger.warning(f"Failed to insert system log: {e}")
+        return False
