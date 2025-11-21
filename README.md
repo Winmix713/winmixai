@@ -101,6 +101,7 @@ supabase/functions/   # Edge Functions powering jobs and analytics orchestration
 - Full index: [docs/INDEX.md](docs/INDEX.md)
 
 ### User Guides
+- **[🛠️ Admin Felület Útmutató (HU)](docs/ADMIN_FELULET_UTMUTATO_HU.md)** – Comprehensive admin interface documentation (Hungarian)
 - **[📖 Teljes Felhasználói Útmutató](docs/USER_GUIDE.md)** – Comprehensive end-to-end user guide (Hungarian primary, English summaries)
 - **[⚡ Gyors Kezdés](docs/QUICK_START.md)** – 10-15 minute quick start guide (Hungarian)
 - **[👥 Szerepkörök és Jogosultságok](docs/ROLE_PERMISSIONS.md)** – Role-based access control matrix (Hungarian)

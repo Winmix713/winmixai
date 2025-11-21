@@ -2,6 +2,7 @@
 
 All project documentation is consolidated under this docs/ directory. The following files are available:
 
+- [ADMIN_FELULET_UTMUTATO_HU.md](./ADMIN_FELULET_UTMUTATO_HU.md)
 - [ADMIN_PANEL_EXTENDED_MVP.md](./ADMIN_PANEL_EXTENDED_MVP.md)
 - [AUDIT_COMPLETION_SUMMARY.md](./AUDIT_COMPLETION_SUMMARY.md)
 - [AUTHENTICATION.md](./AUTHENTICATION.md)
