@@ -1,5 +1,5 @@
 import type { AdminNavItem } from "@/types/admin";
-import { LayoutDashboard, Users, Workflow, Database, Cpu, ShieldCheck, Activity } from "lucide-react";
+import { LayoutDashboard, Users, Workflow, Database, Cpu, ShieldCheck, Activity, CheckCircle } from "lucide-react";
 
 export const NAV_SECTIONS: Array<{
   label: string;
@@ -40,6 +40,13 @@ export const NAV_SECTIONS: Array<{
         href: "/admin/phase9",
         icon: Cpu,
         roles: ["admin", "analyst"],
+      },
+      {
+        label: "Prediction Review",
+        description: "Triage blocked/overconfident predictions",
+        href: "/admin/prediction-review",
+        icon: CheckCircle,
+        roles: ["admin"],
       },
     ],
   },
