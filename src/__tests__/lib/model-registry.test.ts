@@ -1,66 +1,74 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   validateModelEntry,
   validateModelRegistry,
-  ModelStatus,
-  ModelRegistryEntry,
-  getAllModels,
+  getModels,
   getActiveModel,
   getModelsByStatus,
   getModelById,
-} from '../../lib/model-registry';
+  clearModelRegistryCache,
+  type ModelRegistryEntry,
+} from "../../lib/model-registry";
 
-// Mock the model registry data
-const mockRegistryData = [
-  {
-    id: '550e8400-e29b-41d4-a716-446655440000',
-    version: 'v1.0.0',
-    algorithm: 'LogisticRegression',
-    metrics: {
-      accuracy: 0.85,
-      f1_score: 0.83,
-      precision: 0.87,
-      recall: 0.79,
+const mockRegistryData = {
+  models: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      name: "baseline_scoreline_model",
+      version: "2024.11.0",
+      algorithm: "LightGBM",
+      status: "active",
+      registered_at: "2025-01-05T08:00:00.000Z",
+      path: "models/baseline_scoreline_model.pkl",
+      traffic_allocation: 90,
+      description: "Champion scoreline model served to production traffic.",
+      metrics: {
+        accuracy: 0.91,
+        precision: 0.9,
+        recall: 0.92,
+        f1_score: 0.91,
+      },
     },
-    created_at: '2024-01-15T10:30:00.000Z',
-    status: 'active' as ModelStatus,
-    file_path: 'models/v1_champion.pkl',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440001',
-    version: 'v1.1.0',
-    algorithm: 'RandomForest',
-    metrics: {
-      accuracy: 0.88,
-      f1_score: 0.86,
-      precision: 0.89,
-      recall: 0.83,
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      name: "ensemble_candidate_model",
+      version: "2025.01.1",
+      algorithm: "StackedEnsemble",
+      status: "candidate",
+      registered_at: "2025-01-15T10:45:00.000Z",
+      path: "models/ensemble_candidate_model.pkl",
+      traffic_allocation: 10,
+      description: "Offensive-biased ensemble currently receiving a limited portion of traffic.",
+      metrics: {
+        accuracy: 0.93,
+        precision: 0.94,
+        recall: 0.91,
+        f1_score: 0.92,
+      },
     },
-    created_at: '2024-01-20T14:45:00.000Z',
-    status: 'candidate' as ModelStatus,
-    file_path: 'models/v1_candidate.pkl',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440002',
-    version: 'v1.2.0',
-    algorithm: 'GradientBoosting',
-    metrics: {
-      accuracy: 0.90,
-      f1_score: 0.88,
-      precision: 0.91,
-      recall: 0.85,
+    {
+      id: "56b92dd4-3c2b-4b24-a93b-5999e12719b2",
+      name: "logit_shadow_november",
+      version: "2024.12.0",
+      algorithm: "LogisticRegression",
+      status: "shadow",
+      registered_at: "2024-11-20T11:31:15.543Z",
+      path: "models/LogisticRegression_20251120_113115.pkl",
+      traffic_allocation: 0,
+      description: "Shadow deployment capturing telemetry for November logit refresh.",
+      metrics: {
+        accuracy: 0.9,
+        precision: 0.9,
+        recall: 0.9,
+        f1_score: 0.9,
+      },
     },
-    created_at: '2024-01-25T16:20:00.000Z',
-    status: 'archived' as ModelStatus,
-    file_path: 'models/v1_archived.pkl',
-  },
-];
+  ] satisfies ModelRegistryEntry[],
+};
 
-// Mock the fetch function
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch as unknown as typeof fetch;
 
-// Helper to create a proper Response mock
 function createMockResponse(data: unknown, ok: boolean = true, status: number = 200) {
   const response = {
     ok,
@@ -70,201 +78,176 @@ function createMockResponse(data: unknown, ok: boolean = true, status: number = 
     text: async () => JSON.stringify(data),
     headers: new Map(),
     redirected: false,
-    statusText: ok ? 'OK' : 'Error',
-    type: 'basic' as ResponseType,
-    url: '/models/model_registry.json',
+    statusText: ok ? "OK" : "Error",
+    type: "basic" as ResponseType,
+    url: "/models/model_registry.json",
     body: null,
     bodyUsed: false,
     arrayBuffer: async () => new ArrayBuffer(0),
     blob: async () => new Blob(),
     formData: async () => new FormData(),
-  };
+  } satisfies Partial<Response> & { json: () => Promise<unknown> };
   return response;
 }
 
-describe('Model Registry', () => {
+describe("Model Registry", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Default successful response with mock data
+    clearModelRegistryCache();
     mockFetch.mockResolvedValue(createMockResponse(mockRegistryData));
   });
 
-  describe('Validation Functions', () => {
-    it('should validate a correct model entry', () => {
-      const validEntry = mockRegistryData[0];
+  describe("Validation Functions", () => {
+    it("should validate a correct model entry", () => {
+      const validEntry = mockRegistryData.models[0];
       const result = validateModelEntry(validEntry);
       expect(result).toEqual(validEntry);
     });
 
-    it('should throw an error for missing required fields', () => {
+    it("should throw an error for missing required fields", () => {
       const invalidEntry = {
-        // Missing id
-        version: 'v1.0.0',
-        algorithm: 'LogisticRegression',
+        ...mockRegistryData.models[0],
+        id: undefined,
+      };
+
+      expect(() => validateModelEntry(invalidEntry)).toThrow();
+    });
+
+    it("should throw an error for invalid UUID", () => {
+      const invalidEntry = {
+        ...mockRegistryData.models[0],
+        id: "invalid-uuid",
+      };
+
+      expect(() => validateModelEntry(invalidEntry)).toThrow();
+    });
+
+    it("should throw an error for invalid status", () => {
+      const invalidEntry = {
+        ...mockRegistryData.models[0],
+        status: "unknown",
+      };
+
+      expect(() => validateModelEntry(invalidEntry)).toThrow();
+    });
+
+    it("should throw an error for metrics out of range", () => {
+      const invalidEntry = {
+        ...mockRegistryData.models[0],
         metrics: {
-          accuracy: 0.85,
-          f1_score: 0.83,
-          precision: 0.87,
-          recall: 0.79,
-        },
-        created_at: '2024-01-15T10:30:00.000Z',
-        status: 'active',
-        file_path: 'models/v1_champion.pkl',
-      };
-
-      expect(() => validateModelEntry(invalidEntry)).toThrow();
-    });
-
-    it('should throw an error for invalid UUID', () => {
-      const invalidEntry = {
-        ...mockRegistryData[0],
-        id: 'invalid-uuid',
-      };
-
-      expect(() => validateModelEntry(invalidEntry)).toThrow();
-    });
-
-    it('should throw an error for invalid version format', () => {
-      const invalidEntry = {
-        ...mockRegistryData[0],
-        version: '1.0.0', // Missing 'v' prefix
-      };
-
-      expect(() => validateModelEntry(invalidEntry)).toThrow(
-        'Version must follow semantic versioning'
-      );
-    });
-
-    it('should throw an error for invalid status', () => {
-      const invalidEntry = {
-        ...mockRegistryData[0],
-        status: 'invalid-status',
-      };
-
-      expect(() => validateModelEntry(invalidEntry)).toThrow();
-    });
-
-    it('should throw an error for metrics out of range', () => {
-      const invalidEntry = {
-        ...mockRegistryData[0],
-        metrics: {
-          accuracy: 1.5, // Invalid: > 1
-          f1_score: 0.83,
-          precision: 0.87,
-          recall: 0.79,
+          ...mockRegistryData.models[0].metrics,
+          accuracy: 1.5,
         },
       };
 
       expect(() => validateModelEntry(invalidEntry)).toThrow();
     });
 
-    it('should throw an error for invalid datetime', () => {
+    it("should throw an error for invalid datetime", () => {
       const invalidEntry = {
-        ...mockRegistryData[0],
-        created_at: 'invalid-date',
+        ...mockRegistryData.models[0],
+        registered_at: "invalid-date",
       };
 
       expect(() => validateModelEntry(invalidEntry)).toThrow();
     });
 
-    it('should validate a correct model registry', () => {
+    it("should validate a correct model registry payload", () => {
       const result = validateModelRegistry(mockRegistryData);
       expect(result).toEqual(mockRegistryData);
     });
 
-    it('should throw an error for invalid registry array', () => {
-      const invalidRegistry = [
-        {
-          // Missing required fields
-          version: 'v1.0.0',
-          algorithm: 'LogisticRegression',
-        },
-      ];
-
-      expect(() => validateModelRegistry(invalidRegistry)).toThrow();
-    });
-
-    it('should throw an error for non-array input', () => {
+    it("should throw an error for invalid registry payload", () => {
       const invalidRegistry = {
-        // This is an object, not an array
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        version: 'v1.0.0',
+        models: [
+          {
+            // missing required fields
+            id: "missing-fields",
+          },
+        ],
       };
 
       expect(() => validateModelRegistry(invalidRegistry)).toThrow();
     });
   });
 
-  describe('Helper Functions', () => {
-    it('should get all models', async () => {
-      const models = await getAllModels();
-      expect(models).toEqual(mockRegistryData);
-      expect(models).toHaveLength(3);
-      expect(mockFetch).toHaveBeenCalledWith(expect.any(Request));
+  describe("Helper Functions", () => {
+    it("should get all models", async () => {
+      const models = await getModels();
+      expect(models).toEqual(mockRegistryData.models);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
-    it('should get active model', async () => {
+    it("should cache registry payloads between calls", async () => {
+      await getModels();
+      await getModels();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("should get the active model", async () => {
       const activeModel = await getActiveModel();
-      expect(activeModel).toEqual(mockRegistryData[0]);
-      expect(activeModel?.status).toBe('active');
+      expect(activeModel?.status).toBe("active");
+      expect(activeModel?.name).toBe("baseline_scoreline_model");
     });
 
-    it('should return null when no active models exist', async () => {
-      // Mock registry with no active models
-      mockFetch.mockResolvedValue(createMockResponse([mockRegistryData[1], mockRegistryData[2]]));
+    it("should return null when no active models exist", async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse({
+          models: mockRegistryData.models.map((model) => ({
+            ...model,
+            status: "candidate",
+          })),
+        })
+      );
 
       const activeModel = await getActiveModel();
       expect(activeModel).toBeNull();
     });
 
-    it('should return the most recent active model when multiple exist', async () => {
-      const multipleActiveRegistry = [
-        mockRegistryData[0], // active, older
-        {
-          ...mockRegistryData[1],
-          id: '550e8400-e29b-41d4-a716-446655440003',
-          status: 'active' as ModelStatus,
-          created_at: '2024-01-22T10:30:00.000Z', // newer
-        },
-      ];
+    it("should return the most recent active model when multiple exist", async () => {
+      const newerActiveModel: ModelRegistryEntry = {
+        ...mockRegistryData.models[1],
+        id: "550e8400-e29b-41d4-a716-446655440099",
+        status: "active",
+        registered_at: "2025-02-01T00:00:00.000Z",
+      };
 
-      mockFetch.mockResolvedValue(createMockResponse(multipleActiveRegistry));
+      mockFetch.mockResolvedValue(
+        createMockResponse({
+          models: [mockRegistryData.models[0], newerActiveModel],
+        })
+      );
 
       const activeModel = await getActiveModel();
-      expect(activeModel?.id).toBe('550e8400-e29b-41d4-a716-446655440003');
+      expect(activeModel?.id).toBe(newerActiveModel.id);
     });
 
-    it('should get models by status', async () => {
-      const candidateModels = await getModelsByStatus('candidate');
-      expect(candidateModels).toHaveLength(1);
-      expect(candidateModels[0].status).toBe('candidate');
-
-      const archivedModels = await getModelsByStatus('archived');
-      expect(archivedModels).toHaveLength(1);
-      expect(archivedModels[0].status).toBe('archived');
+    it("should get models by status", async () => {
+      const candidates = await getModelsByStatus("candidate");
+      expect(candidates).toHaveLength(1);
+      expect(candidates[0].status).toBe("candidate");
     });
 
-    it('should get model by ID', async () => {
-      const model = await getModelById('550e8400-e29b-41d4-a716-446655440001');
-      expect(model).toEqual(mockRegistryData[1]);
-      expect(model?.algorithm).toBe('RandomForest');
+    it("should get model by ID", async () => {
+      const model = await getModelById("56b92dd4-3c2b-4b24-a93b-5999e12719b2");
+      expect(model?.name).toBe("logit_shadow_november");
     });
 
-    it('should return null for non-existent model ID', async () => {
-      const model = await getModelById('non-existent-id');
+    it("should return null for non-existent model ID", async () => {
+      const model = await getModelById("non-existent-id");
       expect(model).toBeNull();
     });
 
-    it('should handle fetch errors', async () => {
-      mockFetch.mockRejectedValue(new Error('Network error'));
+    it("should handle fetch errors", async () => {
+      mockFetch.mockRejectedValue(new Error("Network error"));
 
-      await expect(getAllModels()).rejects.toThrow('Failed to load model registry');
+      await expect(getModels()).rejects.toThrow("Failed to load model registry: Network error");
     });
 
-    it('should handle HTTP errors', async () => {
+    it("should handle HTTP errors", async () => {
       mockFetch.mockResolvedValue(createMockResponse(null, false, 404));
 
-      await expect(getAllModels()).rejects.toThrow('Failed to fetch model registry: 404');
+      await expect(getModels()).rejects.toThrow("Failed to fetch model registry: 404");
     });
   });
 });

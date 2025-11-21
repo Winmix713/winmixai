@@ -1,63 +1,55 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import {
+  corsHeaders,
+  handleCorsPreflight,
+  protectEndpoint,
+  requireAdmin,
+  logAuditAction,
+} from "../_shared/auth.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleCorsPreflight();
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const authResult = await protectEndpoint(req.headers.get("Authorization"), requireAdmin);
+  if ("error" in authResult) {
+    return new Response(JSON.stringify({ error: authResult.error.message }), {
+      status: authResult.error.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const { context } = authResult;
+  const supabase = context.serviceClient;
+
+  let payload: { modelId?: string; reason?: string } = {};
+  try {
+    payload = await req.json();
+  } catch (_error) {
+    return new Response(JSON.stringify({ error: "Invalid JSON payload" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const { modelId, reason } = payload;
+  if (!modelId) {
+    return new Response(JSON.stringify({ error: "Model ID required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
-        },
-      }
-    );
-
-    // Verify user is admin
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Get user profile to check role
-    const { data: profile } = await supabaseClient
-      .from("user_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Forbidden - Admin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { modelId } = await req.json();
-    if (!modelId) {
-      return new Response(JSON.stringify({ error: "Model ID required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Verify the model exists
-    const { data: targetModel, error: fetchError } = await supabaseClient
+    const { data: targetModel, error: fetchError } = await supabase
       .from("model_registry")
       .select("*")
       .eq("id", modelId)
@@ -70,8 +62,7 @@ serve(async (req) => {
       });
     }
 
-    // Demote all current champions
-    const { error: demoteError } = await supabaseClient
+    const { error: demoteError } = await supabase
       .from("model_registry")
       .update({
         model_type: "retired",
@@ -80,32 +71,67 @@ serve(async (req) => {
       })
       .eq("model_type", "champion");
 
-    if (demoteError) throw demoteError;
+    if (demoteError) {
+      throw demoteError;
+    }
 
-    // Promote the new model
-    const { error: promoteError } = await supabaseClient
+    const { data: updatedModel, error: promoteError } = await supabase
       .from("model_registry")
       .update({
         model_type: "champion",
         traffic_allocation: 90,
         is_active: true,
       })
-      .eq("id", modelId);
+      .eq("id", modelId)
+      .select("*")
+      .single();
 
-    if (promoteError) throw promoteError;
+    if (promoteError || !updatedModel) {
+      throw promoteError || new Error("Failed to promote model");
+    }
+
+    const { error: overrideError } = await supabase.from("model_override_log").insert({
+      model_id: modelId,
+      previous_state: targetModel,
+      new_state: updatedModel,
+      reason: reason || "Manual promotion via admin dashboard",
+      triggered_by: context.user.id,
+    });
+
+    if (overrideError) {
+      throw overrideError;
+    }
+
+    await logAuditAction(
+      context.supabaseClient,
+      context.user.id,
+      "promote_model",
+      "model_registry",
+      modelId,
+      {
+        previous_state: targetModel,
+        new_state: updatedModel,
+        reason: reason || "Manual promotion via admin dashboard",
+      },
+      context.user.email
+    );
+
+    const promotedName =
+      updatedModel.model_name || targetModel.model_name || updatedModel.model_version || modelId;
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Model ${targetModel.model_name} promoted to champion`,
+        message: `Model ${promotedName} promoted to champion`,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
+    console.error("admin-model-promote error", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Internal server error" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

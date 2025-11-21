@@ -469,6 +469,44 @@ export type Database = {
         }
         Relationships: []
       }
+      model_override_log: {
+        Row: {
+          id: string
+          model_id: string | null
+          previous_state: Json
+          new_state: Json
+          reason: string | null
+          triggered_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          model_id?: string | null
+          previous_state: Json
+          new_state: Json
+          reason?: string | null
+          triggered_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          model_id?: string | null
+          previous_state?: Json
+          new_state?: Json
+          reason?: string | null
+          triggered_by?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_override_log_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "model_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           created_at: string | null
