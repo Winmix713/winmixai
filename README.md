@@ -107,6 +107,7 @@ supabase/functions/   # Edge Functions powering jobs and analytics orchestration
 
 ### Technical Documentation
 - [🔐 Auth útmutató](docs/AUTHENTICATION.md) – Authentication & authorization implementation
+- [📊 Supabase Állapot 2026 (HU)](docs/SUPABASE_ALLAPOT_2026_HU.md) – Comprehensive Supabase schema, indexes, RLS policies, and pipelines (Hungarian)
 - [WinMix_TipsterHub_Phase_3-9_Components_EN.md](docs/WinMix_TipsterHub_Phase_3-9_Components_EN.md) – deep dive into components per phase.
 - [PHASE9_IMPLEMENTATION.md](docs/PHASE9_IMPLEMENTATION.md) – architectural notes on the advanced collaborative intelligence layer.
 - [PAGES_OLDALAK_BEMUTATASA_HU.md](docs/PAGES_OLDALAK_BEMUTATASA_HU.md) – src/pages oldalak rövid bemutatása (HU).
