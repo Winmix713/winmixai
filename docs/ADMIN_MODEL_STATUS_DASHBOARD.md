@@ -260,9 +260,62 @@ To test the dashboard:
 - Check model exists in database
 - Verify no database constraints are violated
 
+## Audit Trail
+
+The system maintains comprehensive audit logging for all critical administrative actions. Audit entries are stored in the `admin_audit_log` table and include:
+
+### Audit Actions Tracked
+
+1. **Model Management**
+   - Model promotion (`model_promoted`)
+   - Model retirement (`model_retired`)
+   - Training triggered (`model_training_triggered`)
+
+2. **Feedback Management**
+   - Feedback viewed (`feedback_viewed`)
+   - Feedback exported (`feedback_exported`)
+   - Feedback resolved (`feedback_resolved`)
+   - Feedback reopened (`feedback_reopened`)
+
+3. **User Management**
+   - User created (`user_created`)
+   - User deleted (`user_deleted`)
+   - Role changed (`role_changed`)
+
+4. **Job Management**
+   - Job started (`job_started`)
+   - Job stopped (`job_stopped`)
+
+5. **System Configuration**
+   - Phase 9 settings updated (`phase9_updated`)
+
+### Audit Log Structure
+
+Each audit entry contains:
+- `user_id`: The admin user who performed the action
+- `action`: Machine-readable action identifier
+- `details`: JSON object with contextual information
+- `created_at`: Timestamp of the action
+- `ip_address`: Client IP address (when available)
+
+### Access Control
+
+- **Admins**: Can view all audit entries
+- **Analysts**: Can view their own audit entries only
+- **Users**: No access to audit logs
+
+### Implementation Details
+
+Audit logging is implemented through:
+- Frontend React hooks (`useAuditLog`) for consistent logging
+- Edge Functions for server-side operations
+- Database triggers for automatic logging
+- RLS policies to secure audit data
+
 ## Related Documentation
 
 - [Model Registry Schema](./MODEL_REGISTRY.md)
 - [Supabase Edge Functions](./EDGE_FUNCTIONS.md)
 - [Admin Panel Overview](./ADMIN_PANEL_EXTENDED_MVP.md)
 - [Authentication Guide](./AUTHENTICATION.md)
+- [Security Implementation](./SECURITY_IMPLEMENTATION_SUMMARY.md)

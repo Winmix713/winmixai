@@ -15,6 +15,7 @@ import PredictionsView from '@/pages/PredictionsView';
  
 import Phase9 from '@/pages/Phase9';
 import NotFound from '@/pages/NotFound';
+import Unauthorized from '@/pages/Unauthorized';
 import FeatureFlagsDemo from '@/pages/FeatureFlagsDemo';
 
 // Lazy load heavy components
@@ -41,6 +42,7 @@ const HealthDashboard = React.lazy(() => import('@/pages/admin/HealthDashboard')
 const IntegrationsPage = React.lazy(() => import('@/pages/admin/IntegrationsPage'));
 const StatsPage = React.lazy(() => import('@/pages/admin/StatsPage'));
 const ModelStatusDashboard = React.lazy(() => import('@/pages/admin/ModelStatusDashboard'));
+const FeedbackInboxPage = React.lazy(() => import('@/pages/admin/FeedbackInboxPage'));
 
 // Import admin components when needed
 import RoleGate from '@/components/admin/RoleGate';
@@ -54,6 +56,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={<AuthGate requireAuth={false}><Index /></AuthGate>} />
       <Route path="/login" element={<AuthGate requireAuth={false}><Login /></AuthGate>} />
       <Route path="/signup" element={<AuthGate requireAuth={false}><Signup /></AuthGate>} />
+      <Route path="/unauthorized" element={<AuthGate requireAuth={false}><Unauthorized /></AuthGate>} />
       <Route path="/feature-flags" element={<AuthGate requireAuth={false}><FeatureFlagsDemo /></AuthGate>} />
       <Route 
         path="/championship"
@@ -264,6 +267,18 @@ const AppRoutes: React.FC = () => {
             <RoleGate allowedRoles={["admin", "analyst"]}>
               <Suspense fallback={<PageLoading message="Loading model status..." />}>
                 <ModelStatusDashboard />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/admin/feedback"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading feedback inbox..." />}>
+                <FeedbackInboxPage />
               </Suspense>
             </RoleGate>
           </AuthGate>

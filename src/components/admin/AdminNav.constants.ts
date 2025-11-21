@@ -1,5 +1,5 @@
 import type { AdminNavItem } from "@/types/admin";
-import { LayoutDashboard, Users, Workflow, Database, Cpu, ShieldCheck, Activity } from "lucide-react";
+import { LayoutDashboard, Users, Workflow, Database, Cpu, ShieldCheck, Activity, MessageSquare } from "lucide-react";
 
 export const NAV_SECTIONS: Array<{
   label: string;
@@ -39,6 +39,13 @@ export const NAV_SECTIONS: Array<{
         description: "Adjust collaborative AI",
         href: "/admin/phase9",
         icon: Cpu,
+        roles: ["admin", "analyst"],
+      },
+      {
+        label: "Feedback Inbox",
+        description: "Review user feedback and suggestions",
+        href: "/admin/feedback",
+        icon: MessageSquare,
         roles: ["admin", "analyst"],
       },
     ],

@@ -217,7 +217,11 @@ export type AdminAuditAction =
   | "role_changed"
   | "job_started"
   | "job_stopped"
-  | "phase9_updated";
+  | "phase9_updated"
+  | "feedback_viewed"
+  | "feedback_exported"
+  | "feedback_resolved"
+  | "feedback_reopened";
 
 // Admin Dashboard Card Type
 export interface AdminCategoryCard {
