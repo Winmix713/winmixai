@@ -72,7 +72,7 @@ async function getTeamByName(
   name: string
 ): Promise<Team | null> {
   // First try exact match
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('teams')
     .select('id, name, league_id')
     .ilike('name', name)

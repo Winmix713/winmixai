@@ -168,6 +168,6 @@ Deno.test("AI Chat - Request validation", () => {
   assertEquals(validateRequest({ message: "" }), false);
   assertEquals(validateRequest({ message: "   " }), false);
   assertEquals(validateRequest({ message: "a".repeat(1001) }), false);
-  // @ts-ignore - Testing invalid input
+  // @ts-expect-error - Testing invalid input
   assertEquals(validateRequest({ message: null }), false);
 });

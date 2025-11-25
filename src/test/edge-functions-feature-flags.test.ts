@@ -8,7 +8,7 @@ global.Deno = {
   env: {
     get: (key: string) => mockDenoEnv.get(key),
   },
-} as any;
+} as typeof Deno;
 
 describe('Edge Function Feature Flags', () => {
   beforeEach(() => {

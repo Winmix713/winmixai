@@ -41,12 +41,12 @@ export const useJobs = (options: UseJobsOptions = {}) => {
   const startMutation = useMutation<AdminJobsManagerResult, Error, string>({
     mutationFn: async (jobName) => invokeJobsManager({ action: "start", jobName }),
     onSuccess: async (result, jobName) => {
-      toast.success(`Job \"${jobName}\" started`);
+      toast.success(`Job "${jobName}" started`);
       await log("job_started", { jobName, jobId: result.job?.id ?? result.jobId ?? null });
       await queryClient.invalidateQueries({ queryKey: JOBS_QUERY_KEY });
     },
     onError: (error, jobName) => {
-      toast.error(`Failed to start job \"${jobName}\": ${error.message}`);
+      toast.error(`Failed to start job "${jobName}": ${error.message}`);
     },
   });
 
