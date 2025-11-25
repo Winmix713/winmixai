@@ -12,12 +12,11 @@ export default {
   ],
   prefix: "",
   theme: {
-    screens: {
-      sm: "640px",
-      md: "768px",
-      lg: "1024px",
-      xl: "1280px",
-      "2xl": "1536px",
+    colors: {
+      white: "rgb(255 255 255 / <alpha-value>)",
+      inherit: "inherit",
+      current: "currentColor",
+      transparent: "transparent",
     },
     container: {
       center: true,
@@ -113,6 +112,11 @@ export default {
       },
       backgroundColor: {
         "winmix-dark": "#050505",
+      },
+      opacity: {
+        "5": "0.05",
+        "10": "0.1",
+        "20": "0.2",
       },
       borderRadius: {
         lg: "var(--radius)",
