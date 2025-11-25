@@ -124,33 +124,68 @@
 @layer components {
   /* Glass morphism panels */
   .glass-panel {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
   }
 
   .glass-panel-hover {
-    @apply glass-panel hover:bg-white/10 hover:border-white/20 transition-all duration-200;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+  }
+
+  .glass-panel-hover:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transition: all 200ms;
   }
 
   /* Grid utilities */
   .grid-3-6-3 {
-    @apply grid grid-cols-1 md:grid-cols-12 gap-6;
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1.5rem;
   }
 
-  .grid-3-6-3 > :nth-child(1) {
-    @apply md:col-span-3;
-  }
+  @media (min-width: 768px) {
+    .grid-3-6-3 {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
 
-  .grid-3-6-3 > :nth-child(2) {
-    @apply md:col-span-6;
-  }
+    .grid-3-6-3 > :nth-child(1) {
+      grid-column: span 3;
+    }
 
-  .grid-3-6-3 > :nth-child(3) {
-    @apply md:col-span-3;
+    .grid-3-6-3 > :nth-child(2) {
+      grid-column: span 6;
+    }
+
+    .grid-3-6-3 > :nth-child(3) {
+      grid-column: span 3;
+    }
   }
 
   /* Responsive grid */
   .layout-grid {
-    @apply grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 lg:gap-8;
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .layout-grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .layout-grid {
+      gap: 2rem;
+    }
   }
 
   /* Shimmer effect */
@@ -173,7 +208,9 @@
   }
 
   .text-gradient-violet {
-    @apply bg-gradient-to-r from-violet-400 via-violet-500 to-violet-600 bg-clip-text text-transparent;
+    background: linear-gradient(to right, #a78bfa, #a855f7, #9333ea);
+    background-clip: text;
+    color: transparent;
   }
 
   /* Glow effects */
@@ -191,38 +228,99 @@
 
   /* Card styles */
   .glass-card {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
   }
 
   .glass-card-hover {
-    @apply glass-card hover:bg-white/10 hover:border-white/20 transition-all duration-200;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    transition: all 200ms;
+  }
+
+  .glass-card-hover:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .glass-card-interactive {
-    @apply glass-card hover:bg-white/10 hover:border-emerald-500/30 cursor-pointer transition-all duration-200;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .glass-card-interactive:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
   }
 
   /* Metric pill */
   .metric-pill {
-    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 
   /* Section title */
   .section-title {
-    @apply text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-400 to-violet-400 bg-clip-text text-transparent;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background: linear-gradient(to right, #4ade80, #a78bfa);
+    background-clip: text;
+    color: transparent;
+  }
+
+  @media (min-width: 768px) {
+    .section-title {
+      font-size: 1.875rem;
+    }
   }
 
   /* Responsive text */
   .text-sm-responsive {
-    @apply text-xs md:text-sm;
+    font-size: 0.75rem;
+  }
+
+  @media (min-width: 768px) {
+    .text-sm-responsive {
+      font-size: 0.875rem;
+    }
   }
 
   .text-base-responsive {
-    @apply text-sm md:text-base;
+    font-size: 0.875rem;
+  }
+
+  @media (min-width: 768px) {
+    .text-base-responsive {
+      font-size: 1rem;
+    }
   }
 
   .text-lg-responsive {
-    @apply text-base md:text-lg;
+    font-size: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .text-lg-responsive {
+      font-size: 1.125rem;
+    }
   }
 }
 
@@ -240,7 +338,7 @@
   }
 
   .backdrop-blur-glass {
-    @apply backdrop-blur-xl;
+    backdrop-filter: blur(20px);
   }
 
   .bg-dark-gradient {
@@ -248,11 +346,17 @@
   }
 
   .border-glass {
-    @apply border border-white/10;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .border-glass-hover {
-    @apply border border-white/10 hover:border-white/20 transition-colors duration-200;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition-property: border-color;
+    transition-duration: 200ms;
+  }
+
+  .border-glass-hover:hover {
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .shimmer-line {
