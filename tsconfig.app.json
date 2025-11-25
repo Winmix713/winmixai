@@ -23,7 +23,8 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@winmixpro/*": ["./src/winmixpro/*"]
     }
   },
   "include": ["src"]
