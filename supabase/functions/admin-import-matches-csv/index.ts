@@ -224,7 +224,7 @@ serve(async (req) => {
         }
 
         // Insert match
-        const matchData: any = {
+        const matchData: Record<string, unknown> = {
           league_id: leagueId,
           home_team_id: homeTeamId,
           away_team_id: awayTeamId,

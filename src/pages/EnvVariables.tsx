@@ -18,8 +18,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { EnvironmentVariable, EnvironmentVariableFormData, EnvImportResult, EnvironmentCategory } from "@/types/admin";
+import type { LucideIcon } from "lucide-react";
 
-const CATEGORIES: Array<{ value: EnvironmentCategory; label: string; icon: any }> = [
+const CATEGORIES: Array<{ value: EnvironmentCategory; label: string; icon: LucideIcon }> = [
   { value: 'general', label: 'General', icon: Settings },
   { value: 'database', label: 'Database', icon: Database },
   { value: 'api', label: 'API', icon: Key },
