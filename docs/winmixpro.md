@@ -2,6 +2,15 @@
 
 A WinmixPro admin felület (oldalak 5–15) egy teljesen kliens oldali prototípus, amely a `src/winmixpro` könyvtár alatt található komponensekre, adathalmazokra és segédfüggvényekre épül. A cél az volt, hogy a végleges dashboard élmény (oldalanként magyar tartalommal) demózható legyen valódi backend kapcsolat nélkül.
 
+## Technológiai stack
+
+- **React 19**: Modern server component-ready framework
+- **Tailwind CSS 4 (alpha)**: Nightly build CSS-first system
+- **TypeScript 5.8**: Strict typing support
+- **Vite 5**: Lightning-fast build and dev server
+- **React Router v6**: Client-side routing for nested pages
+- **@winmixpro alias**: Dedicated namespace for the WinmixPro feature module
+
 ## Elérhető oldalak és útvonalak
 
 | Útvonal | Modul | Rövid leírás |
@@ -44,6 +53,77 @@ A módosítható állapotokat a `usePersistentState` hook írja-olvassa. A kulcs
 
 A WinmixPro felület bármely oldaláról elérhető a `/winmixpro` útvonal, a router automatikusan a felhasználói oldalra (`/winmixpro/users`) irányítja a látogatót. A meglévő admin felület (`/admin`) továbbra is Supabase-alapú, a WinmixPro rész OTT fut, ahol a prototípusokra van szükség.
 
+## Folder Structure
+
+```
+src/winmixpro/
+├── components/          # Shared UI components
+│   ├── LoadingGrid.tsx
+│   ├── MetricCard.tsx
+│   ├── MobileHeader.tsx
+│   ├── Page.tsx
+│   └── SidebarNavigation.tsx
+├── data/                # Mock data and types
+│   └── index.ts
+├── hooks/               # Custom React hooks
+├── lib/                 # Utility functions (ready for expansion)
+├── pages/               # Page components (11 admin pages)
+│   ├── AdminUsers.tsx
+│   ├── AdminJobs.tsx
+│   ├── AdminModels.tsx
+│   ├── AdminHealth.tsx
+│   ├── AdminIntegrations.tsx
+│   ├── AdminStats.tsx
+│   ├── AdminFeedback.tsx
+│   ├── AdminPredictions.tsx
+│   ├── AdminPhase9.tsx
+│   ├── AdminThemes.tsx
+│   └── AdminUIControls.tsx
+├── providers/           # Context providers (ready for expansion)
+├── types/               # TypeScript interfaces (ready for expansion)
+├── constants.ts         # Navigation, storage keys
+├── index.ts             # Public exports
+└── WinmixProLayout.tsx  # Main layout shell
+```
+
+## Development Setup
+
+### Prerequisites
+
+```bash
+node >= 20.x
+npm >= 10.x
+```
+
+### Installation & Build
+
+```bash
+# Install dependencies with legacy peer deps support
+npm install --legacy-peer-deps
+
+# Development server
+npm run dev
+
+# Production build
+npm run build
+
+# Linting and type checking
+npm run lint
+npm run type-check
+```
+
+### Path Aliases
+
+The `@winmixpro` alias resolves to `src/winmixpro`:
+
+- **Vite**: Configured in `vite.config.ts`
+- **TypeScript**: Configured in `tsconfig.app.json`
+
+Example import:
+```typescript
+import { WinmixProLayout } from '@winmixpro';
+```
+
 ## QA és parancsok
 
 Az új felület kizárólag frontend oldalon fut, így a klasszikus minőségbiztosítás továbbra is:
@@ -55,3 +135,10 @@ npm run build
 ```
 
 A `finish` folyamat automatikusan futtatja ezeket, így a WinmixPro kód hozzáadása nem igényel extra lépést.
+
+## Tailwind CSS v4 Migration Notes
+
+- **PostCSS Plugin**: Uses `@tailwindcss/postcss` for Tailwind v4 alpha support
+- **Utilities**: Custom utilities in `src/index.css` use native CSS instead of `@apply` directives
+- **Glass Morphism**: Implemented using `backdrop-filter` and rgba colors for cross-browser compatibility
+- **Build Output**: Smaller CSS footprint with CSS-first design approach

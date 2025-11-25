@@ -167,7 +167,9 @@
 
   /* Text gradients */
   .text-gradient-emerald {
-    @apply bg-gradient-to-r from-emerald-300 via-emerald-400 to-emerald-500 bg-clip-text text-transparent;
+    background: linear-gradient(to right, rgb(167, 243, 208), rgb(110, 231, 183), rgb(16, 185, 129));
+    background-clip: text;
+    color: transparent;
   }
 
   .text-gradient-violet {

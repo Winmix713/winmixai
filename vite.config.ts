@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: [
       { find: "@", replacement: path.resolve(__dirname, "./src") },
+      { find: "@winmixpro", replacement: path.resolve(__dirname, "./src/winmixpro") },
       { find: "react-flow-renderer", replacement: path.resolve(__dirname, "./src/vendor/react-flow-renderer.tsx") },
     ],
   },
