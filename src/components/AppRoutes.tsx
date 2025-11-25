@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { usePhaseFlags } from '@/hooks/usePhaseFlags';
 import AuthGate from '@/components/AuthGate';
 import PageLoading from '@/components/ui/page-loading';
@@ -41,11 +41,19 @@ const ModelStatusDashboard = React.lazy(() => import('@/pages/admin/ModelStatusD
 const FeedbackInboxPage = React.lazy(() => import('@/pages/admin/FeedbackInboxPage'));
 const PredictionReviewPage = React.lazy(() => import('@/pages/admin/PredictionReviewPage'));
 
-// Lazy load WinmixPro admin components
-const WinmixProAdminDashboard = React.lazy(() => import('@/pages/winmixpro/AdminDashboard'));
-const WinmixProAdminFeatures = React.lazy(() => import('@/pages/winmixpro/AdminFeatures'));
-const WinmixProAdminDesign = React.lazy(() => import('@/pages/winmixpro/AdminDesign'));
-const WinmixProAdminComponents = React.lazy(() => import('@/pages/winmixpro/AdminComponents'));
+// WinmixPro prototype surfaces
+const WinmixProLayout = React.lazy(() => import('@/winmixpro/WinmixProLayout'));
+const WinmixProAdminUsers = React.lazy(() => import('@/winmixpro/pages/AdminUsers'));
+const WinmixProAdminJobs = React.lazy(() => import('@/winmixpro/pages/AdminJobs'));
+const WinmixProAdminModels = React.lazy(() => import('@/winmixpro/pages/AdminModels'));
+const WinmixProAdminHealth = React.lazy(() => import('@/winmixpro/pages/AdminHealth'));
+const WinmixProAdminIntegrations = React.lazy(() => import('@/winmixpro/pages/AdminIntegrations'));
+const WinmixProAdminStats = React.lazy(() => import('@/winmixpro/pages/AdminStats'));
+const WinmixProAdminFeedback = React.lazy(() => import('@/winmixpro/pages/AdminFeedback'));
+const WinmixProAdminPredictions = React.lazy(() => import('@/winmixpro/pages/AdminPredictions'));
+const WinmixProAdminPhase9 = React.lazy(() => import('@/winmixpro/pages/AdminPhase9'));
+const WinmixProAdminThemes = React.lazy(() => import('@/winmixpro/pages/AdminThemes'));
+const WinmixProAdminUIControls = React.lazy(() => import('@/winmixpro/pages/AdminUIControls'));
 
 // Import admin components when needed
 import RoleGate from '@/components/admin/RoleGate';
@@ -275,45 +283,147 @@ const AppRoutes: React.FC = () => {
         }
       />
       <Route
-        path="/admin/feedback"
-        element={
-          <AuthGate>
-            <RoleGate allowedRoles={["admin", "analyst"]}>
-              <Suspense fallback={<PageLoading message="Loading feedback inbox..." />}>
-                <FeedbackInboxPage />
-              </Suspense>
-            </RoleGate>
-          </AuthGate>
-        }
-      />
-      
-      {/* Legacy routes for backward compatibility */}
-      {(isPhase5Enabled || isPhase6Enabled || isPhase7Enabled || isPhase8Enabled) && (
-        <Route 
-          path="/jobs" 
-          element={
-            <AuthGate allowedRoles={['admin', 'analyst']}>
-              <Suspense fallback={<PageLoading message="Loading scheduled jobs..." />}>
-                <ScheduledJobsPage />
-              </Suspense>
-            </AuthGate>
-          } 
-        />
-      )}
-      
-      {(isPhase6Enabled || isPhase8Enabled) && (
-        <Route 
-          path="/admin/models" 
-          element={
-            <AuthGate allowedRoles={['admin', 'analyst']}>
-              <Suspense fallback={<PageLoading message="Loading models..." />}>
-                <ModelsPage />
-              </Suspense>
-            </AuthGate>
-          } 
-        />
-      )}
-      
+         path="/admin/feedback"
+         element={
+           <AuthGate>
+             <RoleGate allowedRoles={["admin", "analyst"]}>
+               <Suspense fallback={<PageLoading message="Loading feedback inbox..." />}>
+                 <FeedbackInboxPage />
+               </Suspense>
+             </RoleGate>
+           </AuthGate>
+         }
+       />
+
+       <Route
+         path="/winmixpro"
+         element={
+           <AuthGate requireAuth={false}>
+             <Suspense fallback={<PageLoading message="WinmixPro felület betöltése..." />}>
+               <WinmixProLayout />
+             </Suspense>
+           </AuthGate>
+         }
+       >
+         <Route index element={<Navigate to="/winmixpro/users" replace />} />
+         <Route
+           path="users"
+           element={
+             <Suspense fallback={<PageLoading message="Felhasználói felület betöltése..." />}>
+               <WinmixProAdminUsers />
+             </Suspense>
+           }
+         />
+         <Route
+           path="jobs"
+           element={
+             <Suspense fallback={<PageLoading message="Folyamatok betöltése..." />}>
+               <WinmixProAdminJobs />
+             </Suspense>
+           }
+         />
+         <Route
+           path="models"
+           element={
+             <Suspense fallback={<PageLoading message="Modellek betöltése..." />}>
+               <WinmixProAdminModels />
+             </Suspense>
+           }
+         />
+         <Route
+           path="health"
+           element={
+             <Suspense fallback={<PageLoading message="Rendszer egészség betöltése..." />}>
+               <WinmixProAdminHealth />
+             </Suspense>
+           }
+         />
+         <Route
+           path="integrations"
+           element={
+             <Suspense fallback={<PageLoading message="Integrációk betöltése..." />}>
+               <WinmixProAdminIntegrations />
+             </Suspense>
+           }
+         />
+         <Route
+           path="stats"
+           element={
+             <Suspense fallback={<PageLoading message="Statisztikák betöltése..." />}>
+               <WinmixProAdminStats />
+             </Suspense>
+           }
+         />
+         <Route
+           path="feedback"
+           element={
+             <Suspense fallback={<PageLoading message="Visszajelzések betöltése..." />}>
+               <WinmixProAdminFeedback />
+             </Suspense>
+           }
+         />
+         <Route
+           path="predictions"
+           element={
+             <Suspense fallback={<PageLoading message="Predikciók betöltése..." />}>
+               <WinmixProAdminPredictions />
+             </Suspense>
+           }
+         />
+         <Route
+           path="phase9"
+           element={
+             <Suspense fallback={<PageLoading message="Phase 9 betöltése..." />}>
+               <WinmixProAdminPhase9 />
+             </Suspense>
+           }
+         />
+         <Route
+           path="themes"
+           element={
+             <Suspense fallback={<PageLoading message="Témák betöltése..." />}>
+               <WinmixProAdminThemes />
+             </Suspense>
+           }
+         />
+         <Route
+           path="ui-controls"
+           element={
+             <Suspense fallback={<PageLoading message="UI mátrix betöltése..." />}>
+               <WinmixProAdminUIControls />
+             </Suspense>
+           }
+         />
+       </Route>
+
+       {/* Legacy routes for backward compatibility */}
+
+       {(isPhase5Enabled || isPhase6Enabled || isPhase7Enabled || isPhase8Enabled) && (
+         <Route
+           path="/jobs"
+           element={
+             <AuthGate allowedRoles={['admin', 'analyst']}>
+               <Suspense fallback={<PageLoading message="Loading scheduled jobs..." />}>
+                 <ScheduledJobsPage />
+               </Suspense>
+             </AuthGate>
+           }
+         />
+       )}
+
+       {(isPhase6Enabled || isPhase8Enabled) && (
+         <Route
+           path="/admin/models"
+           element={
+             <AuthGate allowedRoles={['admin', 'analyst']}>
+               <Suspense fallback={<PageLoading message="Loading models..." />}>
+                 <ModelsPage />
+               </Suspense>
+             </AuthGate>
+           }
+         />
+       )}
+
       {isPhase8Enabled && (
         <>
           <Route 
