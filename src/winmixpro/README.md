@@ -1,319 +1,487 @@
-# WinmixPro State Hooks & Data Layer
+# WinmixPro Design System
 
-This document describes the localStorage-driven state architecture for WinmixPro, including theme management, feature flags, and typed mock data.
+Premium glass-morphism design system with responsive 12-column grid layout for WinmixPro admin interfaces.
 
-## Architecture Overview
+## Overview
 
-The WinmixPro state management system consists of:
+WinmixPro provides a complete, reusable design system built on:
 
-1. **Core Hooks** - Type-safe localStorage persistence hooks
-2. **Providers** - React Context providers for theme and feature flags
-3. **Library Modules** - Theme manager, feature flags, utilities
-4. **Type Definitions** - Comprehensive TypeScript types
-5. **Mock Data** - Typed datasets for all pages
-6. **Tests** - Unit tests for hooks and utilities
+- **Premium Aesthetics**: Dark theme (#050505) with emerald/violet accents
+- **Glass Morphism**: Backdrop blur + gradient overlays throughout
+- **Responsive Grid**: 1-column mobile, 12-column tablet, 3-6-3 desktop layout
+- **Hungarian Localization**: Navigation labels in Hungarian (HU)
+- **Accessibility**: WCAG-compliant components with proper ARIA labels
 
-## Core Hooks
+## Architecture
 
-### `useLocalStorage<T>`
-
-Type-safe localStorage hook with SSR support and storage event synchronization.
-
-```typescript
-import { useLocalStorage } from "@/winmixpro/hooks/useLocalStorage";
-
-const [value, setValue, removeValue] = useLocalStorage("my-key", "default");
-
-// Update value
-setValue("new-value");
-
-// Remove from storage
-removeValue();
+```
+src/winmixpro/
+├── components/
+│   ├── layout/          # Layout primitives
+│   │   ├── AdminLayout.tsx    # Main layout shell
+│   │   ├── Header.tsx         # Premium header with user menu
+│   │   ├── Sidebar.tsx        # Responsive sidebar (15 admin destinations)
+│   │   ├── MobileMenu.tsx     # Mobile drawer navigation
+│   │   └── LayoutGrid.tsx     # Responsive grid wrapper
+│   └── ui/              # Reusable UI atoms
+│       ├── GlassCard.tsx      # Premium glass card component
+│       ├── MetricPill.tsx     # Stat badge component
+│       ├── SectionTitle.tsx   # Gradient section headers
+│       ├── GridCell.tsx       # Responsive grid cells
+│       └── StatCard.tsx       # Stat display card
+├── WinmixProApp.tsx     # App wrapper component
+├── DemoPage.tsx         # Demo/showcase page
+└── index.ts            # Public exports
 ```
 
-### `useTheme`
+## Grid Layouts
 
-Access theme management functionality throughout the app.
+### Responsive Breakpoints
 
-```typescript
-import { useTheme } from "@/winmixpro/hooks/useTheme";
+- **Mobile** (`< md`): 1 column
+- **Tablet** (`md-lg`): 12 columns (full width)
+- **Desktop** (`>= lg`): 12 columns with specific span variants
 
-const { currentTheme, setTheme, presets, favorites, toggleFavorite, exportCSS, exportJSON, resetTheme } = useTheme();
+### Grid Variants
 
-// Change theme
-setTheme("aurora");
-
-// Add to favorites
-toggleFavorite("fjord");
-
-// Export theme as CSS
-const css = exportCSS();
+#### Full Grid (12 columns)
+```tsx
+<LayoutGrid variant="full">
+  <GridCell span="half">Content</GridCell>
+  <GridCell span="half">Content</GridCell>
+</LayoutGrid>
 ```
 
-### `useFeatureFlags`
+#### 3-6-3 Layout (Perfect for Dashboards)
+```tsx
+<LayoutGrid variant="3-6-3">
+  <GlassCard>Left Sidebar (3 cols)</GlassCard>
+  <GlassCard>Main Content (6 cols)</GlassCard>
+  <GlassCard>Right Panel (3 cols)</GlassCard>
+</LayoutGrid>
+```
 
-Manage feature flags with dependency checking and validation.
+#### Sidebar Layout
+```tsx
+<LayoutGrid variant="sidebar">
+  {/* Grid with sidebar support */}
+</LayoutGrid>
+```
 
-```typescript
-import { useFeatureFlags } from "@/winmixpro/hooks/useFeatureFlags";
+## Components
 
-const { isEnabled, getValue, toggleFlag, updateFlag, exportFlags, importFlags, resetFlags } = useFeatureFlags();
+### Layout Components
 
-// Check if feature is enabled
-if (isEnabled("enable-phase9-collaborative")) {
-  // Feature code here
+#### AdminLayout
+Main layout shell that wraps all admin pages.
+
+```tsx
+<AdminLayout userEmail="user@example.com" onLogout={() => {}}>
+  {/* Your content here */}
+</AdminLayout>
+```
+
+Props:
+- `userEmail?: string` - User email for header display
+- `onLogout?: () => void` - Logout callback
+- `className?: string` - Additional CSS classes
+
+**Features:**
+- Sticky header with user menu
+- Responsive sidebar with Hungarian labels
+- Mobile drawer navigation
+- Glassmorphic design throughout
+
+#### Header
+Premium header with logo and user menu.
+
+```tsx
+<Header 
+  userEmail="user@example.com"
+  onMobileMenuToggle={() => setMobileOpen(!mobileOpen)}
+  onLogout={() => {}}
+/>
+```
+
+#### Sidebar
+Navigation sidebar with 15 admin destinations and Hungarian labels.
+
+```tsx
+<Sidebar isCollapsed={false} onCollapse={(collapsed) => {}} />
+```
+
+Navigation items (with Hungarian labels):
+- Dashboard (Szétlátás)
+- Users (Felhasználók)
+- Jobs (Feladatok)
+- Health (Egészség)
+- Monitoring (Megfigyelés)
+- Analytics (Elemzés)
+- Models (Modellek)
+- Statistics (Statisztika)
+- Integrations (Integrációk)
+- Phase 9 (Szakasz 9)
+- Matches (Mérkőzések)
+- Predictions (Előrejelzések)
+- Feedback (Visszajelzés)
+- Environment (Környezet)
+- Settings (Beállítások)
+
+#### MobileMenu
+Mobile-only navigation drawer.
+
+```tsx
+<MobileMenu isOpen={true} onClose={() => setOpen(false)} />
+```
+
+#### LayoutGrid
+Responsive grid wrapper with multiple variants.
+
+```tsx
+<LayoutGrid variant="3-6-3" className="gap-6">
+  {/* Grid items */}
+</LayoutGrid>
+```
+
+### UI Components
+
+#### GlassCard
+Premium glass-morphism card component.
+
+```tsx
+<GlassCard interactive glow="emerald" onClick={() => {}}>
+  {/* Card content */}
+</GlassCard>
+```
+
+Props:
+- `interactive?: boolean` - Enable hover effects
+- `glow?: 'emerald' | 'violet' | 'none'` - Glow effect color
+- `onClick?: () => void` - Click handler
+
+#### MetricPill
+Compact stat badge component.
+
+```tsx
+<MetricPill
+  label="Active Users"
+  value="1,234"
+  icon={<Users className="w-4 h-4" />}
+  variant="emerald"
+  size="md"
+/>
+```
+
+Props:
+- `label: string` - Label text
+- `value: string | number` - Metric value
+- `icon?: React.ReactNode` - Icon element
+- `variant?: 'emerald' | 'violet' | 'neutral'` - Color variant
+- `size?: 'sm' | 'md' | 'lg'` - Component size
+
+#### SectionTitle
+Gradient section header component.
+
+```tsx
+<SectionTitle
+  title="Dashboard Overview"
+  subtitle="System health and performance metrics"
+  icon={<BarChart3 className="w-6 h-6" />}
+  align="left"
+/>
+```
+
+Props:
+- `title: string` - Section title
+- `subtitle?: string` - Optional subtitle
+- `icon?: React.ReactNode` - Optional icon
+- `align?: 'left' | 'center' | 'right'` - Text alignment
+
+#### GridCell
+Responsive grid cell with built-in span variants.
+
+```tsx
+<GridCell span="half">
+  {/* Takes 50% on desktop, 100% on mobile */}
+</GridCell>
+```
+
+Props:
+- `span?: 'left' | 'center' | 'right' | 'full' | 'half'` - Column span
+- `className?: string` - Additional CSS classes
+
+#### StatCard
+Premium stat display card.
+
+```tsx
+<StatCard
+  title="Total Predictions"
+  value="45,291"
+  icon={<TrendingUp className="w-5 h-5" />}
+  change={{ value: 12, direction: 'up' }}
+/>
+```
+
+Props:
+- `title: string` - Stat title
+- `value: string | number` - Stat value
+- `icon?: React.ReactNode` - Icon element
+- `change?: { value: number; direction: 'up' | 'down' }` - Optional trend
+
+## CSS Utilities
+
+### Glass Morphism
+```css
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg;
 }
 
-// Get metadata value
-const decayRate = getValue<number>("enable-temporal-decay", "decayRate");
-
-// Toggle a flag
-toggleFlag("enable-auto-refresh");
-```
-
-## Providers
-
-### `WinmixProProviders`
-
-Wraps the entire WinmixPro app with theme and feature flag providers.
-
-```typescript
-import { WinmixProProviders } from "@/winmixpro/providers";
-
-<WinmixProProviders>
-  <YourApp />
-</WinmixProProviders>
-```
-
-## Theme Management
-
-### Available Themes
-
-1. **Aurora** (Default) - Emerald + cyan gradient, stable
-2. **Neon Ember** - Orange + pink gradient, experimental
-3. **Fjord** - Sky blue + indigo gradient, stable
-4. **Slate Glow** - Neutral slate tones, experimental
-5. **Midnight Purple** - Purple tones for AI surfaces, stable
-6. **Forest Mint** - Green tones for data quality, experimental
-
-### Theme Structure
-
-```typescript
-interface ThemePreset {
-  id: string;
-  name: string;
-  description: string;
-  palette: ThemePalette;
-  glass: GlassSettings;
-  status: "stable" | "experimental";
+.glass-card {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg;
 }
 ```
 
-### Applying Themes
+### Gradients
+```css
+.text-gradient-emerald {
+  @apply bg-gradient-to-r from-emerald-300 via-emerald-400 to-emerald-500 bg-clip-text text-transparent;
+}
 
-Themes are automatically applied via CSS variables when changed:
-
-- `--color-primary`
-- `--color-secondary`
-- `--color-accent`
-- `--glass-blur`
-- `--glass-opacity`
-- etc.
-
-## Feature Flags
-
-### Default Flags
-
-13 feature flags are available by default:
-
-- **Phase 9 Collaborative Weights** (enabled, 100%)
-- **Market Overlay** (enabled, 80%)
-- **Temporal Decay** (enabled, 100%)
-- **Advanced Health Heatmap** (disabled, 25% - experiment)
-- **Real-time Alerts** (enabled, 100% - operational)
-- **Dark Mode Only** (enabled, 100%)
-- **Champion vs Challenger Comparison** (enabled, 100%)
-- **Feedback Inbox** (enabled, 90%)
-- **Auto Refresh Data** (disabled, 0% - experiment)
-- **Theme Customization** (enabled, 100%)
-- **Sentry Integration** (enabled, 100% - operational)
-- **Prediction Confidence Scores** (enabled, 100%)
-- **Market API Killswitch** (disabled, 0% - killswitch)
-
-### Flag Categories
-
-- `feature` - Standard features
-- `experiment` - A/B test experiments
-- `killswitch` - Emergency off switches
-- `operational` - Infrastructure/monitoring
-
-### Flag Dependencies
-
-Flags can depend on other flags. Example:
-
-```typescript
-{
-  id: "enable-market-overlay",
-  dependencies: ["enable-phase9-collaborative"],
-  // Will only be enabled if phase9-collaborative is also enabled
+.text-gradient-violet {
+  @apply bg-gradient-to-r from-violet-400 via-violet-500 to-violet-600 bg-clip-text text-transparent;
 }
 ```
 
-## Mock Data
+### Glow Effects
+```css
+.glow-emerald {
+  box-shadow: 0 0 60px rgba(34, 197, 94, 0.3);
+}
 
-All mock data is organized into modules under `src/winmixpro/data/`:
-
-- `dashboard.ts` - KPIs and metrics (1248 users, 3 active jobs, 87.3% accuracy)
-- `users.ts` - User list with roles and segments
-- `jobs.ts` - Scheduled jobs and timeline
-- `models.ts` - ML models (champion/challenger/shadow)
-- `health.ts` - Service health heatmap and alerts
-- `integrations.ts` - External integrations (GitHub, Slack, Linear, Sentry)
-- `stats.ts` - League statistics, goal distributions
-- `feedback.ts` - User feedback entries
-- `predictions.ts` - Prediction accuracy and upcoming matches
-- `phase9.ts` - Phase 9 settings and defaults
-- `themes.ts` - Theme presets (legacy format)
-- `components.ts` - UI control dependencies
-
-All data is strongly typed and includes Hungarian labels as specified.
-
-## Storage Keys
-
-All localStorage keys are centralized in `STORAGE_KEYS`:
-
-- `winmixpro-theme` - Current theme ID
-- `winmixpro-theme-favorites` - Array of favorite theme IDs
-- `winmixpro-feature-flags` - Feature flags configuration
-- `winmixpro-users-filter` - Users page filter state
-- `winmixpro-users-active` - Users page "active only" toggle
-- `winmixpro-job-filter` - Jobs page filter
-- `winmixpro-integrations-verified` - Integrations verification state
-- `winmixpro-feedback-status` - Feedback inbox filters
-- `winmixpro-phase9-settings` - Phase 9 configuration
-- `winmixpro-ui-pins` - Pinned UI controls
-- `winmixpro-stats-league` - Selected league for stats
-- `winmixpro-stats-range` - Selected time range for stats
-- `winmixpro-prediction-range` - Prediction time range
-
-## Utility Functions
-
-### Formatters
-
-```typescript
-import { formatPercent, formatShortNumber, formatDuration, formatRelativeTime } from "@/winmixpro/lib/utils";
-
-formatPercent(87.34); // "87.3%"
-formatShortNumber(1248); // "1.2K"
-formatDuration(125000); // "2p 5mp"
-formatRelativeTime(42); // "42 perce"
-```
-
-### State Management
-
-```typescript
-import { resetWinmixProState, exportWinmixProState, importWinmixProState } from "@/winmixpro/lib/reset-state";
-
-// Reset all state and reload
-resetWinmixProState();
-
-// Export state as JSON
-const stateJson = exportWinmixProState();
-
-// Import state from JSON
-const result = importWinmixProState(stateJson);
-if (result.success) {
-  console.log("State imported successfully");
+.glow-violet {
+  box-shadow: 0 0 60px rgba(168, 85, 247, 0.3);
 }
 ```
 
-## Constants
-
-### Glass Presets
-
-```typescript
-import { GLASS_PRESETS } from "@/winmixpro/lib/constants";
-
-// GLASS_PRESETS.LIGHT, GLASS_PRESETS.MEDIUM, GLASS_PRESETS.HEAVY
+### Responsive Text
+```css
+.text-sm-responsive   /* text-xs md:text-sm */
+.text-base-responsive /* text-sm md:text-base */
+.text-lg-responsive   /* text-base md:text-lg */
 ```
 
-### Animation Durations
-
-```typescript
-import { ANIMATION_DURATIONS, TRANSITION_CLASSES } from "@/winmixpro/lib/constants";
-
-// ANIMATION_DURATIONS.FAST (150ms)
-// ANIMATION_DURATIONS.NORMAL (300ms)
-// ANIMATION_DURATIONS.SLOW (500ms)
-// ANIMATION_DURATIONS.SHIMMER (2000ms)
-
-// TRANSITION_CLASSES.DEFAULT
-// TRANSITION_CLASSES.FAST
-// etc.
+### Transitions
+```css
+.transition-fast  /* 150ms cubic-bezier(0.4, 0, 0.2, 1) */
+.transition-base  /* 200ms cubic-bezier(0.4, 0, 0.2, 1) */
+.transition-slow  /* 300ms cubic-bezier(0.4, 0, 0.2, 1) */
 ```
 
-## Testing
+## Color Palette
 
-Unit tests are provided for core functionality:
+### Primary Colors
+- **Background**: #050505 (WinmixPro Dark)
+- **Emerald**: #22c55e (Success, Primary actions)
+- **Violet**: #a855f7 (Secondary actions, Accents)
+- **Zinc**: #111827 - #1f2937 (Neutral tones)
 
-```bash
-npm test -- src/winmixpro/__tests__
-```
+### Semantic Colors
+All colors use HSL variables for consistent theming:
+- `--primary`: Emerald for main actions
+- `--secondary`: Violet for secondary actions
+- `--accent`: Emerald for highlights
+- `--destructive`: Red for danger states
 
-Tests cover:
+## Typography
 
-- `useLocalStorage` hook (8 tests)
-- Feature flags utilities (21 tests)
+- **Font Family**: Inter (Google Fonts)
+- **Font Weights**: 100-900
+- **Letter Spacing**: -0.01em (tight)
 
-## Migration Guide
+## Animations
 
-If you're migrating from `usePersistentState` to `useLocalStorage`:
+### Keyframes
+- `shimmer`: Shimmering text effect
+- `fade-in`: Fade in with slide up
+- `slide-in-bottom`: Slide in from bottom
+- `slide-in-right`: Slide in from right
 
-```typescript
-// Old
-import { usePersistentState } from "@/winmixpro/hooks/usePersistentState";
-const [value, setValue] = usePersistentState("key", "default");
+### Transitions
+- All elements default to 200ms transitions
+- Customizable with transition utilities
 
-// New
-import { useLocalStorage } from "@/winmixpro/hooks/useLocalStorage";
-const [value, setValue, removeValue] = useLocalStorage("key", "default");
-// Note: removeValue is the third element in the tuple
-```
+## Usage Example
 
-Both hooks remain available for backward compatibility.
+```tsx
+import {
+  AdminLayout,
+  LayoutGrid,
+  GridCell,
+  GlassCard,
+  SectionTitle,
+  StatCard,
+  MetricPill,
+} from '@/winmixpro';
+import { BarChart3, Users, Zap } from 'lucide-react';
 
-## Best Practices
-
-1. **Always use TypeScript types** - All data structures have interfaces
-2. **Check feature flags** - Use `isEnabled()` before accessing experimental features
-3. **Handle SSR gracefully** - All hooks check for browser environment
-4. **Use storage keys constants** - Import from `STORAGE_KEYS` instead of hardcoding
-5. **Validate imported data** - Use validation helpers when importing configs
-6. **Test state persistence** - Clear localStorage in tests with `beforeEach()`
-
-## Example Usage in Pages
-
-```typescript
-import { useTheme, useFeatureFlags } from "@/winmixpro/providers";
-import { dashboardMetrics } from "@/winmixpro/data/dashboard";
-import { formatPercent } from "@/winmixpro/lib/utils";
-
-const MyPage = () => {
-  const { currentTheme } = useTheme();
-  const { isEnabled } = useFeatureFlags();
-
-  const showAdvancedMetrics = isEnabled("enable-advanced-heatmap");
-
+export function MyAdminPage() {
   return (
-    <div>
-      <h1>Current Theme: {currentTheme.name}</h1>
-      <p>Accuracy: {formatPercent(dashboardMetrics.accuracy)}</p>
-      {showAdvancedMetrics && <AdvancedMetrics />}
-    </div>
+    <AdminLayout userEmail="admin@example.com">
+      <div className="space-y-8">
+        {/* Page Title */}
+        <SectionTitle
+          title="Dashboard"
+          subtitle="System overview and metrics"
+          icon={<BarChart3 className="w-6 h-6" />}
+        />
+
+        {/* Metric Pills */}
+        <div className="flex flex-wrap gap-4">
+          <MetricPill
+            label="Active Users"
+            value="1,234"
+            icon={<Users className="w-4 h-4" />}
+            variant="emerald"
+          />
+          <MetricPill
+            label="Running Jobs"
+            value="12"
+            icon={<Zap className="w-4 h-4" />}
+            variant="violet"
+          />
+        </div>
+
+        {/* 3-6-3 Layout */}
+        <LayoutGrid variant="3-6-3" className="gap-6">
+          {/* Left Sidebar */}
+          <GlassCard className="p-6">
+            <h3 className="text-lg font-bold text-white mb-4">Filters</h3>
+            {/* Filter content */}
+          </GlassCard>
+
+          {/* Main Content */}
+          <div className="space-y-6">
+            <StatCard
+              title="Total Predictions"
+              value="45,291"
+              icon={<BarChart3 className="w-5 h-5" />}
+              change={{ value: 12, direction: 'up' }}
+            />
+            <GlassCard className="p-6">
+              {/* Main content */}
+            </GlassCard>
+          </div>
+
+          {/* Right Panel */}
+          <GlassCard className="p-6">
+            <h3 className="text-lg font-bold text-white mb-4">Stats</h3>
+            {/* Stats content */}
+          </GlassCard>
+        </LayoutGrid>
+      </div>
+    </AdminLayout>
   );
-};
+}
 ```
 
-## Support
+## Responsive Design Considerations
 
-For questions or issues with the state management system, contact the DesignOps or Frontend teams.
+### Mobile-First Approach
+- Components default to mobile layout (1 column)
+- Desktop optimizations applied at `md` and `lg` breakpoints
+- Touch-friendly sizes (min 44px height for interactive elements)
+
+### Breakpoints
+- `sm`: 640px
+- `md`: 768px (tablet starts here)
+- `lg`: 1024px (desktop layout)
+- `xl`: 1280px
+- `2xl`: 1536px
+
+### Header & Sidebar
+- Header: Always visible (sticky)
+- Sidebar: Hidden on mobile, visible on md+ (fixed)
+- Mobile Menu: Overlay drawer on mobile only
+
+## Performance
+
+### Optimizations
+- CSS Grid for efficient layouts
+- Backdrop blur GPU-accelerated
+- Smooth transitions (200ms default)
+- No layout thrashing
+- Shimmer animation GPU-optimized
+
+### Bundle Size
+- Tree-shakeable exports
+- Utility-first CSS approach
+- Only loaded components are included
+
+## Accessibility
+
+### WCAG Compliance
+- Proper heading hierarchy
+- Color contrast ratios meet AA standards
+- Focus indicators on interactive elements
+- ARIA labels on mobile menu toggle
+- Semantic HTML structure
+
+### Keyboard Navigation
+- Tab order follows visual hierarchy
+- Enter/Space to activate buttons
+- Escape to close mobile menu
+- Arrow keys for navigation (future enhancement)
+
+## Customization
+
+### Extending Colors
+Update `tailwind.config.ts`:
+```tsx
+colors: {
+  emerald: { /* Custom emerald palette */ },
+  violet: { /* Custom violet palette */ },
+}
+```
+
+### Custom Breakpoints
+Update `tailwind.config.ts`:
+```tsx
+screens: {
+  'sm': '640px',
+  'md': '768px',
+  'lg': '1024px',
+}
+```
+
+### Custom Shadows
+Update `tailwind.config.ts`:
+```tsx
+boxShadow: {
+  'glass': '0 8px 20px rgba(0, 0, 0, 0.4)',
+  'glass-lg': '0 20px 40px rgba(0, 0, 0, 0.5)',
+}
+```
+
+## Browser Support
+
+- Chrome/Edge: Latest 2 versions
+- Firefox: Latest 2 versions
+- Safari: Latest 2 versions
+- Mobile browsers: iOS Safari 12+, Chrome Android 90+
+
+## Demo
+
+See `DemoPage.tsx` for a complete showcase of all components:
+
+```tsx
+import { WinmixProDemoPage } from '@/winmixpro/DemoPage';
+```
+
+## Future Enhancements
+
+- [ ] Dark/Light theme toggle
+- [ ] Custom color themes
+- [ ] Animation preferences (respects prefers-reduced-motion)
+- [ ] Right-to-left (RTL) language support
+- [ ] Voice navigation for accessibility
+- [ ] Additional admin destinations as needed

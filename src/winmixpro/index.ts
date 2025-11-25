@@ -1,9 +1,8 @@
-export * from "./hooks";
-export * from "./providers";
-export * from "./lib";
-export * from "./types";
-export * from "./data";
+// Main app wrapper
+export { WinmixProApp } from './WinmixProApp';
 
-export { default as WinmixProLayout } from "./WinmixProLayout";
-export { default as ThemeSelector } from "./components/ThemeSelector";
-export { default as FeatureFlagsDebug } from "./components/FeatureFlagsDebug";
+// Layout components
+export { AdminLayout, Header, Sidebar, MobileMenu, LayoutGrid } from './components/layout';
+
+// UI components
+export { GlassCard, MetricPill, SectionTitle, GridCell, StatCard } from './components/ui';
