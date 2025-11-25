@@ -1,5 +1,5 @@
 import type { AdminNavItem } from "@/types/admin";
-import { LayoutDashboard, Users, Workflow, Database, Cpu, ShieldCheck, Activity, CheckCircle } from "lucide-react";
+import { LayoutDashboard, Users, Workflow, Database, Cpu, ShieldCheck, Activity, CheckCircle, Settings, Palette, Package } from "lucide-react";
 
 export const NAV_SECTIONS: Array<{
   label: string;
@@ -45,7 +45,7 @@ export const NAV_SECTIONS: Array<{
         label: "Feedback Inbox",
         description: "Review user feedback and suggestions",
         href: "/admin/feedback",
-        icon: MessageSquare,
+        icon: Activity,
         roles: ["admin", "analyst"],
       },
     ],
@@ -87,6 +87,39 @@ export const NAV_SECTIONS: Array<{
         href: "/admin/security",
         icon: ShieldCheck,
         roles: ["admin"],
+      },
+    ],
+  },
+  {
+    label: "WinmixPro",
+    items: [
+      {
+        label: "Dashboard",
+        description: "System overview and metrics",
+        href: "/winmixpro/admin",
+        icon: LayoutDashboard,
+        roles: ["admin", "analyst"],
+      },
+      {
+        label: "Features",
+        description: "Manage feature toggles",
+        href: "/winmixpro/admin/features",
+        icon: Settings,
+        roles: ["admin", "analyst"],
+      },
+      {
+        label: "Design",
+        description: "Theme and UI customization",
+        href: "/winmixpro/admin/design",
+        icon: Palette,
+        roles: ["admin", "analyst"],
+      },
+      {
+        label: "Components",
+        description: "Component management and metrics",
+        href: "/winmixpro/admin/components",
+        icon: Package,
+        roles: ["admin", "analyst"],
       },
     ],
   },

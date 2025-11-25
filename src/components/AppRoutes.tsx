@@ -41,6 +41,12 @@ const ModelStatusDashboard = React.lazy(() => import('@/pages/admin/ModelStatusD
 const FeedbackInboxPage = React.lazy(() => import('@/pages/admin/FeedbackInboxPage'));
 const PredictionReviewPage = React.lazy(() => import('@/pages/admin/PredictionReviewPage'));
 
+// Lazy load WinmixPro admin components
+const WinmixProAdminDashboard = React.lazy(() => import('@/pages/winmixpro/AdminDashboard'));
+const WinmixProAdminFeatures = React.lazy(() => import('@/pages/winmixpro/AdminFeatures'));
+const WinmixProAdminDesign = React.lazy(() => import('@/pages/winmixpro/AdminDesign'));
+const WinmixProAdminComponents = React.lazy(() => import('@/pages/winmixpro/AdminComponents'));
+
 // Import admin components when needed
 import RoleGate from '@/components/admin/RoleGate';
 
@@ -342,6 +348,56 @@ const AppRoutes: React.FC = () => {
             </Suspense>
           </AuthGate>
         } 
+      />
+      
+      {/* WinmixPro Admin Routes */}
+      <Route
+        path="/winmixpro/admin"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading WinmixPro dashboard..." />}>
+                <WinmixProAdminDashboard />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/winmixpro/admin/features"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading features..." />}>
+                <WinmixProAdminFeatures />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/winmixpro/admin/design"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading design settings..." />}>
+                <WinmixProAdminDesign />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/winmixpro/admin/components"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading component management..." />}>
+                <WinmixProAdminComponents />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
       />
       
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
