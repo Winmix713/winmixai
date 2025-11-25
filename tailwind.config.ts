@@ -12,6 +12,12 @@ export default {
   ],
   prefix: "",
   theme: {
+    colors: {
+      white: "rgb(255 255 255 / <alpha-value>)",
+      inherit: "inherit",
+      current: "currentColor",
+      transparent: "transparent",
+    },
     container: {
       center: true,
       padding: "2rem",
@@ -106,6 +112,11 @@ export default {
       },
       backgroundColor: {
         "winmix-dark": "#050505",
+      },
+      opacity: {
+        "5": "0.05",
+        "10": "0.1",
+        "20": "0.2",
       },
       borderRadius: {
         lg: "var(--radius)",
