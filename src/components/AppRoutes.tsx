@@ -460,6 +460,56 @@ const AppRoutes: React.FC = () => {
         } 
       />
       
+      {/* WinmixPro Admin Routes */}
+      <Route
+        path="/winmixpro/admin"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading WinmixPro dashboard..." />}>
+                <WinmixProAdminDashboard />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/winmixpro/admin/features"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading features..." />}>
+                <WinmixProAdminFeatures />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/winmixpro/admin/design"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading design settings..." />}>
+                <WinmixProAdminDesign />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/winmixpro/admin/components"
+        element={
+          <AuthGate>
+            <RoleGate allowedRoles={["admin", "analyst"]}>
+              <Suspense fallback={<PageLoading message="Loading component management..." />}>
+                <WinmixProAdminComponents />
+              </Suspense>
+            </RoleGate>
+          </AuthGate>
+        }
+      />
+      
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
